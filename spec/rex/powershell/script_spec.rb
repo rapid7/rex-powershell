@@ -18,7 +18,7 @@ RSpec.describe Rex::Powershell::Output do
       expect(subject).to be
       expect(subject).to be_kind_of Rex::Powershell::Script
       expect(subject.rig).to be
-      expect(subject.rig).to be_kind_of Rex::RandomIdentifierGenerator
+      expect(subject.rig).to be_kind_of Rex::RandomIdentifier::Generator
       expect(subject.code).to be
       expect(subject.code).to be_kind_of String
       expect(subject.code.empty?).to be_falsey

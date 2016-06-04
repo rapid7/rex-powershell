@@ -59,6 +59,13 @@ module Rex
 
       new_subs
     end
+
+    #
+    # Converts a raw string to a powershell byte array
+    #
+    def self.to_powershell(str, name = "buf")
+      return Rex::Powershell::Script.to_byte_array(str, name)
+    end
   end
 end
 
