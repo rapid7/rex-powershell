@@ -4,3 +4,4 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'rex-text', path: '/Users/dmaloney/rapid7/rex-text'
+gem 'rex-random_identifier', path: '/Users/dmaloney/rapid7/rex-random_identifier'

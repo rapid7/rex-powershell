@@ -1,5 +1,5 @@
 # -*- coding: binary -*-
-require 'rex/random_identifier_generator'
+require 'rex/random_identifier'
 
 module Rex
 module Powershell
@@ -13,7 +13,7 @@ module Payload
   end
 
   def self.to_win32pe_psh_net(template_path, code)
-    rig = Rex::RandomIdentifierGenerator.new()
+    rig = Rex::RandomIdentifier::Generator.new()
     rig.init_var(:var_code)
     rig.init_var(:var_kernel32)
     rig.init_var(:var_baseaddr)
@@ -40,7 +40,7 @@ module Payload
     hash_sub[:var_iter] 		= Rex::Text.rand_text_alpha(rand(8)+8)
     hash_sub[:var_syscode] 		= Rex::Text.rand_text_alpha(rand(8)+8)
 
-    hash_sub[:shellcode] = Rex::Text.to_powershell(code, hash_sub[:var_code])
+    hash_sub[:shellcode] = Rex::Powershell.to_powershell(code, hash_sub[:var_code])
 
     read_replace_script_template(template_path, "to_mem_old.ps1.template", hash_sub).gsub(/(?<!\r)\n/, "\r\n")
   end
@@ -52,7 +52,7 @@ module Payload
   #
   def self.to_win32pe_psh_reflection(template_path, code)
     # Intialize rig and value names
-    rig = Rex::RandomIdentifierGenerator.new()
+    rig = Rex::RandomIdentifier::Generator.new()
     rig.init_var(:func_get_proc_address)
     rig.init_var(:func_get_delegate_type)
     rig.init_var(:var_code)
