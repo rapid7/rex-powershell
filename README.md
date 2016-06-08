@@ -1,8 +1,7 @@
 # Rex::Powershell
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/rex/powershell`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Ruby Exploitation(Rex) library for dealing with Powershell Scripts. This Library is designed to help create and manipulate powershell scripts for use
+with Metasploit exploits. It is ported over from the Metasploit Framework code originally created by Meatballs1(https://github.com/Meatballs1)
 
 ## Installation
 
@@ -20,9 +19,6 @@ Or install it yourself as:
 
     $ gem install rex-powershell
 
-## Usage
-
-TODO: Write usage instructions here
 
 ## Development
 
