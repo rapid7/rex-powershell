@@ -1,5 +1,6 @@
 # -*- coding: binary -*-
 
+require 'rex'
 require 'forwardable'
 
 module Rex
@@ -32,7 +33,7 @@ module Powershell
 
     def initialize(code)
       @code = ''
-      @rig = Rex::RandomIdentifier::Generator.new
+      @rig = Rex::RandomIdentifierGenerator.new
 
       begin
         # Open code file for reading

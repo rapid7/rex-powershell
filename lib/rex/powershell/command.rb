@@ -26,6 +26,16 @@ module Command
   end
 
   #
+  # Return the ASCII contents of the base64 encoded script
+  #
+  # @param script_in [String] Encoded script
+  #
+  # @return [String] Decoded script
+  def self.decode_script(script_in)
+    Rex::Powershell::Script.new(script_in).decode_code
+  end
+
+  #
   # Return a gzip compressed powershell script
   # Will invoke PSH modifiers as enabled
   #
@@ -46,6 +56,16 @@ module Command
     psh.sub_vars if opts[:sub_vars]
     psh.sub_funcs if opts[:sub_funcs]
     psh.compress_code(eof)
+  end
+
+  #
+  # Return the ASCII contents of the GZIP/Deflate compressed script
+  #
+  # @param script_in [String] Compressed script
+  #
+  # @return [String] Decompressed script
+  def self.decompress_script(script_in)
+    Rex::Powershell::Script.new(script_in).decompress_code
   end
 
   #
@@ -248,6 +268,9 @@ EOS
   #   environment variable at the start of the command line
   # @option opts [Boolean] :use_single_quotes Wraps the -Command
   #   argument in single quotes unless :encode_final_payload
+  # @option opts [TrueClass,FalseClass] :exec_in_place Removes the
+  #   executable wrappers from the powershell code returning raw PSH
+  #   for executing with an existing PSH context
   #
   # @return [String] Powershell command line with payload
   def self.cmd_psh_payload(pay, payload_arch, template_path, opts = {})
@@ -340,9 +363,9 @@ EOS
       command_args[:command] = final_payload
     end
 
-    psh_command = generate_psh_command_line(command_args)
+    psh_command = opts[:exec_in_place] ? "#{command_args[:command]}" : generate_psh_command_line(command_args)
 
-    if opts[:remove_comspec]
+    if opts[:remove_comspec] or opts[:exec_in_place]
       command = psh_command
     else
       command = "%COMSPEC% /b /c start /b /min #{psh_command}"
