@@ -1,5 +1,6 @@
 # -*- coding: binary -*-
 
+
 require 'forwardable'
 
 module Rex
