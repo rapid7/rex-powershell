@@ -1,5 +1,5 @@
 # -*- coding: binary -*-
-require 'rex/random_identifier_generator'
+require 'rex/random_identifier'
 
 module Rex
 module Powershell

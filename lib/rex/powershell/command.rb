@@ -363,7 +363,11 @@ EOS
       command_args[:command] = final_payload
     end
 
-    psh_command = opts[:exec_in_place] ? "#{command_args[:command]}" : generate_psh_command_line(command_args)
+    if opts[:exec_in_place]
+      psh_command = "#{command_args[:command]}"
+    else
+      psh_command =  generate_psh_command_line(command_args)
+    end
 
     if opts[:remove_comspec] or opts[:exec_in_place]
       command = psh_command
