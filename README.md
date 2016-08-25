@@ -1,7 +1,8 @@
 # Rex::Powershell
 
 Ruby Exploitation(Rex) library for dealing with Powershell Scripts. This Library is designed to help create and manipulate powershell scripts for use
-with Metasploit exploits. It is ported over from the Metasploit Framework code originally created by Meatballs1(https://github.com/Meatballs1)
+with Metasploit exploits. It is ported over from the Metasploit Framework code originally created by RageLtMan(https://github.com/sempervictus) and
+ modified by Meatballs1(https://github.com/Meatballs1).
 
 ## Installation
 
