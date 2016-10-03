@@ -150,7 +150,7 @@ RSpec.describe Rex::Powershell::Command do
 
   describe "::cmd_psh_payload" do
     let(:template_path) do
-      File.join('spec','file_fixtures','templates')
+      Rex::Powershell::Templates::TEMPLATE_DIR
     end
 
     let(:psh_method) do

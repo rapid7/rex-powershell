@@ -1,5 +1,6 @@
 # -*- coding: binary -*-
 require 'rex/powershell/version'
+require 'rex/powershell/templates'
 require 'rex/powershell/payload'
 require 'rex/powershell/output'
 require 'rex/powershell/parser'
