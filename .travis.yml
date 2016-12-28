@@ -3,4 +3,4 @@ group: stable
 cache: bundler
 language: ruby
 rvm:
-  - 2.3.2
+  - 2.3.3
