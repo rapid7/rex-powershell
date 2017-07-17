@@ -158,13 +158,17 @@ module Command
         when :noprofile
           arg_string << '-NoProfile ' if value
         when :windowstyle
-          arg_string << "-WindowStyle #{value} " if  value
+          arg_string << "-WindowStyle #{value} " if value
       end
     end
 
     # Command must be last (unless from stdin - etc)
     if opts[:command]
-      arg_string << "-Command #{opts[:command]}"
+      if opts[:use_single_quotes]
+        arg_string << "-Command #{opts[:command]}"
+      else
+        arg_string << "-Command \"#{opts[:command]}\""
+      end
     end
 
     # Shorten arg if PSH 2.0+
@@ -214,8 +218,10 @@ module Command
 
     if encoded
       opts[:encodedcommand] = ps_code
-    else
+    elsif opts[:use_single_quotes]
       opts[:command] = ps_code.gsub("'", "''")
+    else
+      opts[:command] = ps_code
     end
 
     ps_args = generate_psh_args(opts)
@@ -283,17 +289,17 @@ EOS
     end
 
     psh_payload = case opts[:method]
-                    when 'net'
-                      Rex::Powershell::Payload.to_win32pe_psh_net(template_path, pay)
-                    when 'reflection'
-                      Rex::Powershell::Payload.to_win32pe_psh_reflection(template_path, pay)
-                    when 'old'
-                      Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
-                    when 'msil'
-                      fail RuntimeError, 'MSIL Powershell method no longer exists'
-                    else
-                      fail RuntimeError, 'No Powershell method specified'
-                  end
+      when 'net'
+        Rex::Powershell::Payload.to_win32pe_psh_net(template_path, pay)
+      when 'reflection'
+        Rex::Powershell::Payload.to_win32pe_psh_reflection(template_path, pay)
+      when 'old'
+        Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
+      when 'msil'
+        fail RuntimeError, 'MSIL Powershell method no longer exists'
+      else
+        fail RuntimeError, 'No Powershell method specified'
+    end
 
     # Run our payload in a while loop
     if opts[:persist]
