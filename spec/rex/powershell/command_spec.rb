@@ -393,8 +393,13 @@ RSpec.describe Rex::Powershell::Command do
           expect(long_args[-1]).not_to eql " "
 
           if opts[:command]
-            expect(long_args[-10..-1]).to eql "-Command Z"
-            expect(short_args[-4..-1]).to eql "-c Z"
+            if opts[:use_single_quotes]
+              expect(long_args[-10..-1]).to eql "-Command Z"
+              expect(short_args[-4..-1]).to eql "-c Z"
+            else
+              expect(long_args[-12..-1]).to eql "-Command \"Z\""
+              expect(short_args[-6..-1]).to eql "-c \"Z\""
+            end
           end
        end
       end
