@@ -1,5 +1,5 @@
 module Rex
   module Powershell
-    VERSION = "0.1.73"
+    VERSION = "0.1.74"
   end
 end
