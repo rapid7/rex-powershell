@@ -359,13 +359,6 @@ EOS
         end
       end
     else
-      if opts[:use_single_quotes]
-        # Escape Single Quotes
-        final_payload.gsub!("'", "''")
-        # Wrap command in quotes
-        final_payload = "'#{final_payload}'"
-      end
-
       command_args[:command] = final_payload
     end
 
