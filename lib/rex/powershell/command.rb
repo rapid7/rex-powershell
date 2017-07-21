@@ -135,8 +135,6 @@ module Command
     arg_string = ' '
     opts.each_pair do |arg, value|
       case arg
-        when :encodedcommand
-          arg_string << "-EncodedCommand #{value} " if value
         when :executionpolicy
           arg_string << "-ExecutionPolicy #{value} " if value
         when :inputformat
@@ -169,6 +167,8 @@ module Command
       else
         arg_string << "-Command \"#{opts[:command]}\""
       end
+    elsif opts[:encodedcommand]
+      arg_string << "-EncodedCommand #{opts[:encodedcommand]}"
     end
 
     # Shorten arg if PSH 2.0+
@@ -218,18 +218,17 @@ module Command
 
     if encoded
       opts[:encodedcommand] = ps_code
-    elsif opts[:use_single_quotes]
-      opts[:command] = ps_code.gsub("'", "''")
     else
-      opts[:command] = ps_code
+      opts[:command] = ps_code.gsub("'", "''")
+      opts[:use_single_quotes]  = true
     end
 
-    ps_args = generate_psh_args(opts)
+    ps_args = "'#{generate_psh_args(opts)}'"
 
     process_start_info = <<EOS
 $s=New-Object System.Diagnostics.ProcessStartInfo
 $s.FileName=$b
-$s.Arguments='#{ps_args}'
+$s.Arguments=#{ps_args}
 $s.UseShellExecute=$false
 $s.RedirectStandardOutput=$true
 $s.WindowStyle='Hidden'
@@ -248,7 +247,11 @@ EOS
 
     archictecure_detection.gsub!("\n", '')
 
-    archictecure_detection + process_start_info
+    if opts[:no_arch_detect]
+      return   "$b='powershell.exe';#{process_start_info}"
+    else
+      archictecure_detection + process_start_info
+    end
   end
 
   #
