@@ -366,7 +366,8 @@ RSpec.describe Rex::Powershell::Command do
                     [:sta, true],
                     [:noprofile, true],
                     [:windowstyle, "hidden"],
-                    [:command, "Z"]
+                    [:command, "Z"],
+                    [:wrap_double_quotes, true]
     ]
 
     permutations = (0..command_args.length).to_a.combination(2).map{|i,j| command_args[i...j]}
@@ -381,7 +382,10 @@ RSpec.describe Rex::Powershell::Command do
           opts[:shorten] = false
           long_args = subject.generate_psh_args(opts)
 
-          opt_length = opts.length - 1
+          # EncodedCommand and Command are mutually exclusive, shorten and wrap_double_quotes are external
+          opt_length = opts.length - 1 # shorten
+          opt_length = opt_length - 1 if opts.keys.include?(:wrap_double_quotes)
+          opt_length = opt_length - 1 if opts.keys.include?(:encodedcommand && :command)
 
           expect(short_args).not_to be_nil
           expect(long_args).not_to be_nil
