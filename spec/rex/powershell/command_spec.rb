@@ -313,10 +313,10 @@ RSpec.describe Rex::Powershell::Command do
       end
     end
 
-    context 'when use single quotes' do
-      it 'should wrap in single quotes' do
-        code = subject.cmd_psh_payload(payload, arch, template_path, use_single_quotes: true, method: psh_method)
-        expect(code.include?(' -c \'')).to be_truthy
+    context 'when wrap double quotes' do
+      it 'should wrap in double quotes' do
+        code = subject.cmd_psh_payload(payload, arch, template_path, wrap_double_quotes: true, method: psh_method)
+        expect(code.include?(' -c "')).to be_truthy
       end
     end
   end
@@ -393,12 +393,12 @@ RSpec.describe Rex::Powershell::Command do
           expect(long_args[-1]).not_to eql " "
 
           if opts[:command]
-            if opts[:use_single_quotes]
-              expect(long_args[-10..-1]).to eql "-Command Z"
-              expect(short_args[-4..-1]).to eql "-c Z"
-            else
+            if opts[:wrap_double_quotes]
               expect(long_args[-12..-1]).to eql "-Command \"Z\""
               expect(short_args[-6..-1]).to eql "-c \"Z\""
+            else
+              expect(long_args[-10..-1]).to eql "-Command Z"
+              expect(short_args[-4..-1]).to eql "-c Z"
             end
           end
        end

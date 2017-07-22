@@ -162,10 +162,10 @@ module Command
 
     # Command must be last (unless from stdin - etc)
     if opts[:command]
-      if opts[:use_single_quotes]
-        arg_string << "-Command #{opts[:command]}"
-      else
+      if opts[:wrap_double_quotes]
         arg_string << "-Command \"#{opts[:command]}\""
+      else
+        arg_string << "-Command #{opts[:command]}"
       end
     elsif opts[:encodedcommand]
       arg_string << "-EncodedCommand #{opts[:encodedcommand]}"
@@ -220,15 +220,13 @@ module Command
       opts[:encodedcommand] = ps_code
     else
       opts[:command] = ps_code.gsub("'", "''")
-      opts[:use_single_quotes]  = true
+      opts[:wrap_double_quotes]  = false
     end
-
-    ps_args = "'#{generate_psh_args(opts)}'"
 
     process_start_info = <<EOS
 $s=New-Object System.Diagnostics.ProcessStartInfo
 $s.FileName=$b
-$s.Arguments=#{ps_args}
+$s.Arguments='#{generate_psh_args(opts)}'
 $s.UseShellExecute=$false
 $s.RedirectStandardOutput=$true
 $s.WindowStyle='Hidden'
@@ -275,8 +273,8 @@ EOS
   #   powershell script
   # @option opts [Boolean] :remove_comspec Removes the %COMSPEC%
   #   environment variable at the start of the command line
-  # @option opts [Boolean] :use_single_quotes Wraps the -Command
-  #   argument in single quotes unless :encode_final_payload
+  # @option opts [Boolean] :wrap_double_quotes Wraps the -Command
+  #   argument in double quotes unless :encode_final_payload
   # @option opts [TrueClass,FalseClass] :exec_in_place Removes the
   #   executable wrappers from the powershell code returning raw PSH
   #   for executing with an existing PSH context
