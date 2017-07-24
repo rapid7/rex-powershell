@@ -296,7 +296,7 @@ EOS
       when 'old'
         Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
       when 'msil'
-        fail RuntimeError, 'MSIL Powershell method no longer exists'
+        Rex::Powershell::Payload.to_win32pe_psh_msil(template_path, pay)
       else
         fail RuntimeError, 'No Powershell method specified'
     end

