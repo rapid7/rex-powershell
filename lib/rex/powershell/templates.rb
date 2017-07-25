@@ -14,6 +14,9 @@ module Rex
       # The powershell script template for memory injection using the old method
       TO_MEM_OLD = File.join(TEMPLATE_DIR, 'to_mem_old.ps1.template')
 
+      # The powershell script template for memory injection using the old method
+      TO_MEM_MSIL = File.join(TEMPLATE_DIR, 'to_mem_msil.ps1.template')
+
     end
   end
 end
