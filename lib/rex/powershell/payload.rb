@@ -5,15 +5,17 @@ module Rex
 module Powershell
 module Payload
 
+  include Rex::Powershell::Templates
+ 
   def self.read_replace_script_template(template_path, filename, hash_sub)
-    template_pathname = File.join(template_path, filename)
     template = ''
+    template_pathname = File.join(template_path, filename)
     File.open(template_pathname, "rb") {|f| template = f.read}
     template % hash_sub
   end
 
-  def self.to_win32pe_psh_net(template_path, code)
-    rig = Rex::RandomIdentifier::Generator.new()
+  def self.to_win32pe_psh_net(template_path = TEMPLATE_DIR, code)
+    rig = Rex::RandomIdentifier::Generator.new(DEFAULT_RIG_OPTS)
     rig.init_var(:var_code)
     rig.init_var(:var_kernel32)
     rig.init_var(:var_baseaddr)
@@ -23,6 +25,7 @@ module Payload
     rig.init_var(:var_compileParams)
     rig.init_var(:var_syscode)
     rig.init_var(:var_temp)
+    rig.init_var(:var_opf)
 
     hash_sub = rig.to_h
     hash_sub[:b64shellcode] = Rex::Text.encode_base64(code)
@@ -30,7 +33,7 @@ module Payload
     read_replace_script_template(template_path, "to_mem_dotnet.ps1.template", hash_sub).gsub(/(?<!\r)\n/, "\r\n")
   end
 
-  def self.to_win32pe_psh(template_path, code)
+  def self.to_win32pe_psh(template_path = TEMPLATE_DIR, code)
     hash_sub = {}
     hash_sub[:var_code] 		= Rex::Text.rand_text_alpha(rand(8)+8)
     hash_sub[:var_win32_func]	= Rex::Text.rand_text_alpha(rand(8)+8)
@@ -50,9 +53,9 @@ module Payload
   # Tweaked by shellster
   # Originally from PowerSploit
   #
-  def self.to_win32pe_psh_reflection(template_path, code)
+  def self.to_win32pe_psh_reflection(template_path = TEMPLATE_DIR, code)
     # Intialize rig and value names
-    rig = Rex::RandomIdentifier::Generator.new()
+    rig = Rex::RandomIdentifier::Generator.new(DEFAULT_RIG_OPTS)
     rig.init_var(:func_get_proc_address)
     rig.init_var(:func_get_delegate_type)
     rig.init_var(:var_code)
@@ -64,13 +67,12 @@ module Payload
     rig.init_var(:var_type_builder)
     rig.init_var(:var_buffer)
     rig.init_var(:var_hthread)
+    rig.init_var(:var_opf)
 
     hash_sub = rig.to_h
     hash_sub[:b64shellcode] = Rex::Text.encode_base64(code)
 
-    read_replace_script_template(template_path,
-                                 "to_mem_pshreflection.ps1.template",
-                                 hash_sub).gsub(/(?<!\r)\n/, "\r\n")
+    read_replace_script_template(template_path, "to_mem_pshreflection.ps1.template",hash_sub).gsub(/(?<!\r)\n/, "\r\n")
   end
 
   #
@@ -78,8 +80,8 @@ module Payload
   # http://www.exploit-monday.com/2013/04/MSILbasedShellcodeExec.html
   # Referencing PowerShell Empire data/module_source/code_execution/Invoke-ShellcodeMSIL.ps1
   #
-  def self.to_win32pe_psh_msil(template_path, code)
-    rig = Rex::RandomIdentifier::Generator.new
+  def self.to_win32pe_psh_msil(template_path = TEMPLATE_DIR, code)
+    rig = Rex::RandomIdentifier::Generator.new(DEFAULT_RIG_OPTS)
     rig.init_var(:func_build_dyn_type)
     rig.init_var(:func_get_meth_addr)
     rig.init_var(:var_type_name)

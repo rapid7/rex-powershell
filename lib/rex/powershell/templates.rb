@@ -2,6 +2,9 @@ module Rex
   module Powershell
     module Templates
 
+      # RandomIdentifier::Generator options
+      DEFAULT_RIG_OPTS = Rex::Powershell::Script::DEFAULT_RIG_OPTS
+
       # The base directory that all Powershell script templates live in
       TEMPLATE_DIR = File.expand_path( File.join( __FILE__ , '..', '..', '..', '..', 'data', 'templates') )
 
