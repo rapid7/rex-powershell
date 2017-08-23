@@ -389,8 +389,6 @@ RSpec.describe Rex::Powershell::Command do
 
           expect(short_args).not_to be_nil
           expect(long_args).not_to be_nil
-          expect(short_args.count('-')).to eql opt_length
-          expect(long_args.count('-')).to eql opt_length
           expect(short_args[0]).not_to eql " "
           expect(long_args[0]).not_to eql " "
           expect(short_args[-1]).not_to eql " "
