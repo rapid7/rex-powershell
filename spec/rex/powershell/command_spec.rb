@@ -235,14 +235,9 @@ RSpec.describe Rex::Powershell::Command do
     end
 
     context 'when method is msil' do
-      it 'should raise an exception' do
-        except = false
-        begin
-          subject.cmd_psh_payload(payload, arch, template_path, method: 'msil')
-        rescue RuntimeError
-          except = true
-        end
-        expect(except).to be_truthy
+      it 'should generate a command line' do
+        code = subject.cmd_psh_payload(payload, arch, template_path, method: 'msil')
+        expect(decompress(code).include?('System.Reflection.MethodInfo')).to be_truthy
       end
     end
 

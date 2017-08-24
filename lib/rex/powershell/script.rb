@@ -1,6 +1,5 @@
 # -*- coding: binary -*-
 
-
 require 'forwardable'
 
 module Rex
@@ -12,6 +11,11 @@ module Powershell
     include Output
     include Parser
     include Obfu
+    DEFAULT_RIG_OPTS = {
+      max_length: 5,
+      min_length: 2,
+      forbidden: Parser::RESERVED_VARIABLE_NAMES.map {|e| e[1..-1]}
+    }
     # Pretend we are actually a string
     extend ::Forwardable
     # In case someone messes with String we delegate based on its instance methods
@@ -31,9 +35,9 @@ module Powershell
                    :[]=, :encode, :*, :hex, :to_f, :strip!, :rpartition, :ord, :capitalize, :upto, :force_encoding,
                    :end_with?
 
-    def initialize(code)
+    def initialize(code, rig = nil)
       @code = ''
-      @rig = Rex::RandomIdentifier::Generator.new
+      @rig = rig || Rex::RandomIdentifier::Generator.new(DEFAULT_RIG_OPTS)
 
       begin
         # Open code file for reading
