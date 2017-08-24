@@ -313,10 +313,10 @@ RSpec.describe Rex::Powershell::Command do
       end
     end
 
-    context 'when use single quotes' do
-      it 'should wrap in single quotes' do
-        code = subject.cmd_psh_payload(payload, arch, template_path, use_single_quotes: true, method: psh_method)
-        expect(code.include?(' -c \'')).to be_truthy
+    context 'when wrap double quotes' do
+      it 'should wrap in double quotes' do
+        code = subject.cmd_psh_payload(payload, arch, template_path, wrap_double_quotes: true, method: psh_method)
+        expect(code.include?(' -c "')).to be_truthy
       end
     end
   end
@@ -366,7 +366,8 @@ RSpec.describe Rex::Powershell::Command do
                     [:sta, true],
                     [:noprofile, true],
                     [:windowstyle, "hidden"],
-                    [:command, "Z"]
+                    [:command, "Z"],
+                    [:wrap_double_quotes, true]
     ]
 
     permutations = (0..command_args.length).to_a.combination(2).map{|i,j| command_args[i...j]}
@@ -381,24 +382,25 @@ RSpec.describe Rex::Powershell::Command do
           opts[:shorten] = false
           long_args = subject.generate_psh_args(opts)
 
-          opt_length = opts.length - 1
+          # EncodedCommand and Command are mutually exclusive, shorten and wrap_double_quotes are external
+          opt_length = opts.length - 1 # shorten
+          opt_length = opt_length - 1 if opts.keys.include?(:wrap_double_quotes)
+          opt_length = opt_length - 1 if opts.keys.include?(:encodedcommand && :command)
 
           expect(short_args).not_to be_nil
           expect(long_args).not_to be_nil
-          expect(short_args.count('-')).to eql opt_length
-          expect(long_args.count('-')).to eql opt_length
           expect(short_args[0]).not_to eql " "
           expect(long_args[0]).not_to eql " "
           expect(short_args[-1]).not_to eql " "
           expect(long_args[-1]).not_to eql " "
 
           if opts[:command]
-            if opts[:use_single_quotes]
-              expect(long_args[-10..-1]).to eql "-Command Z"
-              expect(short_args[-4..-1]).to eql "-c Z"
-            else
+            if opts[:wrap_double_quotes]
               expect(long_args[-12..-1]).to eql "-Command \"Z\""
               expect(short_args[-6..-1]).to eql "-c \"Z\""
+            else
+              expect(long_args[-10..-1]).to eql "-Command Z"
+              expect(short_args[-4..-1]).to eql "-c Z"
             end
           end
        end
