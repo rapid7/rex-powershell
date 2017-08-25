@@ -36,10 +36,10 @@ module Payload
   def self.to_win32pe_psh(template_path = TEMPLATE_DIR, code)
     hash_sub = {}
     hash_sub[:var_code] 		= Rex::Text.rand_text_alpha(rand(8)+8)
-    hash_sub[:var_win32_func]	        = Rex::Text.rand_text_alpha(rand(8)+8)
+    hash_sub[:var_win32_func]		= Rex::Text.rand_text_alpha(rand(8)+8)
     hash_sub[:var_payload] 		= Rex::Text.rand_text_alpha(rand(8)+8)
     hash_sub[:var_size] 		= Rex::Text.rand_text_alpha(rand(8)+8)
-    hash_sub[:var_rwx] 		        = Rex::Text.rand_text_alpha(rand(8)+8)
+    hash_sub[:var_rwx]			= Rex::Text.rand_text_alpha(rand(8)+8)
     hash_sub[:var_iter] 		= Rex::Text.rand_text_alpha(rand(8)+8)
     hash_sub[:var_syscode] 		= Rex::Text.rand_text_alpha(rand(8)+8)
 
