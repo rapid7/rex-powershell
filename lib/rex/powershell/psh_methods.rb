@@ -3,7 +3,7 @@
 module Rex
 module Powershell
   ##
-  # Convenience methods for generating powershell code in Ruby
+  # Convenience methods for generating Powershell code in Ruby
   ##
 
   module PshMethods
@@ -17,6 +17,18 @@ module Powershell
     def self.download(src, target)
       target ||= '$pwd\\' << src.split('/').last
       %Q^(new-object System.Net.WebClient).DownloadFile('#{src}', '#{target}')^
+    end
+
+    #
+    # Download file via .NET WebClient and execute it afterwards
+    #
+    # @param src [String] URL to the file
+    # @param target [String] Location to save the file
+    #
+    # @return [String] Powershell code to download a file
+    def self.download_run(src, target)
+      target ||= '$pwd\\' << src.split('/').last
+      %Q^$z="#{target}"; (new-object System.Net.WebClient).DownloadFile('#{src}', $z); invoke-item $z^
     end
 
     #
