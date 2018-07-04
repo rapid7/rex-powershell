@@ -339,9 +339,14 @@ EOS
       end
     end
 
-    # Wrap in hidden runtime / architecture detection
-    inner_args = opts.clone
-    final_payload = run_hidden_psh(smallest_payload, payload_arch, encoded, inner_args)
+    if opts[:exec_in_place]
+      final_payload = smallest_payload
+    else
+      # Wrap in hidden runtime / architecture detection
+      inner_args = opts.clone
+      inner_args[:use_single_quotes] = true
+      final_payload = run_hidden_psh(smallest_payload, payload_arch, encoded, inner_args)
+    end
 
     command_args = {
         noprofile: true,
@@ -350,7 +355,6 @@ EOS
 
     if opts[:encode_final_payload]
       command_args[:encodedcommand] = encode_script(final_payload)
-
       # If '=' is a bad character pad the payload until Base64 encoded
       # payload contains none.
       if opts[:no_equals]
@@ -362,12 +366,7 @@ EOS
     else
       command_args[:command] = final_payload
     end
-
-    if opts[:exec_in_place]
-      psh_command = "#{command_args[:command]}"
-    else
-      psh_command =  generate_psh_command_line(command_args)
-    end
+    psh_command =  generate_psh_command_line(command_args)
 
     if opts[:remove_comspec] or opts[:exec_in_place]
       command = psh_command
