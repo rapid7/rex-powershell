@@ -391,8 +391,6 @@ EOS
 
     if opts[:exec_no_wrap]
       psh_command = Rex::Powershell::Payload.to_iex_rc4(template_path, psh_payload)
-    elsif opts[:exec_in_place]
-      psh_command = "#{command_args[:command]}"
     else
       psh_command =  generate_psh_command_line(command_args)
     end
