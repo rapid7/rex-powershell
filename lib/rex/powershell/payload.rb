@@ -111,7 +111,7 @@ module Payload
   # PSH script that executes an RC4 encrypted payload with Invoke-Expression and disables AMSI beforehand.
   # by Adrian Vollmer (SySS GmbH, https://www.syss.de)
   #
-  def self.to_iex_rc4(template_path = TEMPLATE_DIR, code)
+  def self.to_win32pe_psh_rc4(template_path = TEMPLATE_DIR, code)
     rig = Rex::RandomIdentifier::Generator.new(DEFAULT_RIG_OPTS)
     rig.init_var(:func_rc4_decrypt)
     rig.init_var(:var_rc4buffer)
@@ -126,7 +126,7 @@ module Payload
     hash_sub[:random_key] = key
     hash_sub[:b64payload] = Rex::Text.encode_base64(enc_code)
 
-    read_replace_script_template(template_path, "iex_rc4.ps1.template", hash_sub).gsub(/(?<!\r)\n/, "\r\n")
+    read_replace_script_template(template_path, "to_mem_rc4.ps1.template", hash_sub).gsub(/(?<!\r)\n/, "\r\n")
   end
 
 end
