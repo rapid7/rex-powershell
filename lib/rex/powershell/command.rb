@@ -344,7 +344,7 @@ EOS
     else
       # Wrap in hidden runtime / architecture detection
       inner_args = opts.clone
-      inner_args[:use_single_quotes] = true
+      inner_args[:wrap_double_quotes] = true
       final_payload = run_hidden_psh(smallest_payload, payload_arch, encoded, inner_args)
     end
 
