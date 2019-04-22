@@ -52,16 +52,16 @@ module Powershell
 
       # Build the powershell expression
       # Decode base64 encoded command and create a stream object
-      psh_expression =  "$s=New-Object IO.MemoryStream(,"
-      psh_expression << "[Convert]::FromBase64String('#{encoded_stream}'));"
+      psh_expression =  "$s=New-Object System.IO.MemoryStream(,"
+      psh_expression << "[System.Convert]::FromBase64String('#{encoded_stream}'));"
       # Read & delete the first two bytes due to incompatibility with MS
       psh_expression << '$s.ReadByte();'
       psh_expression << '$s.ReadByte();'
       # Uncompress and invoke the expression (execute)
-      psh_expression << 'IEX (New-Object IO.StreamReader('
-      psh_expression << 'New-Object IO.Compression.DeflateStream('
+      psh_expression << 'IEX (New-Object System.IO.StreamReader('
+      psh_expression << 'New-Object System.IO.Compression.DeflateStream('
       psh_expression << '$s,'
-      psh_expression << '[IO.Compression.CompressionMode]::Decompress)'
+      psh_expression << '[System.IO.Compression.CompressionMode]::Decompress)'
       psh_expression << ')).ReadToEnd();'
 
       # If eof is set, add a marker to signify end of code output
@@ -103,15 +103,15 @@ module Powershell
 
       # Build the powershell expression
       # Create and execute script lock fed by the IO.StreamReader
-      psh_expression = '&([scriptblock]::create((New-Object IO.StreamReader('
+      psh_expression = '&([scriptblock]::create((New-Object System.IO.StreamReader('
       # Feed StreamREader from a GzipStream
-      psh_expression << 'New-Object IO.Compression.GzipStream('
+      psh_expression << 'New-Object System.IO.Compression.GzipStream('
       # GzipStream operates on the Memory Stream
-      psh_expression << '(New-Object IO.MemoryStream(,'
+      psh_expression << '(New-Object System.IO.MemoryStream(,'
       # MemoryStream consists of base64 encoded compressed data
-      psh_expression << "[Convert]::FromBase64String('#{encoded_stream}')))"
+      psh_expression << "[System.Convert]::FromBase64String('#{encoded_stream}')))"
       # Set the GzipStream to decompress its MemoryStream contents
-      psh_expression << ',[IO.Compression.CompressionMode]::Decompress)'
+      psh_expression << ',[System.IO.Compression.CompressionMode]::Decompress)'
       # Read the decoded, decompressed result into scriptblock contents
       psh_expression << ')).ReadToEnd()))'
 
