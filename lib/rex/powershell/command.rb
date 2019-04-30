@@ -252,12 +252,14 @@ EOS
     end
   end
 
-
   #
-  # Generate the PSH payload from the template
+  # Creates a powershell command line string which will execute the
+  # payload in a hidden window in the appropriate execution environment
+  # for the payload architecture. Opts are passed through to
+  # run_hidden_psh, generate_psh_command_line and generate_psh_args
   #
   # @param pay [String] The payload shellcode
-  # @param template_path [String] The template path
+  # @param payload_arch [String] The payload architecture 'x86'/'x86_64'
   # @param opts [Hash] The options to generate the command
   # @option opts [Boolean] :persist Loop the payload to cause
   #   re-execution if the shellcode finishes
@@ -265,9 +267,28 @@ EOS
   #   before executing the payload
   # @option opts [String] :method The powershell injection technique to
   #   use: 'net'/'reflection'/'old'
+  # @option opts [Boolean] :encode_inner_payload Encodes the powershell
+  #   script within the hidden/architecture detection wrapper
+  # @option opts [Boolean] :encode_final_payload Encodes the final
+  #   powershell script
+  # @option opts [Boolean] :remove_comspec Removes the %COMSPEC%
+  #   environment variable at the start of the command line
+  # @option opts [Boolean] :wrap_double_quotes Wraps the -Command
+  #   argument in double quotes unless :encode_final_payload
+  # @option opts [TrueClass,FalseClass] :exec_in_place Removes the
+  #   executable wrappers from the powershell code returning raw PSH
+  #   for executing with an existing PSH context
   #
-  # @return [String] Powershell payload
-  def self.generate_psh_payload(pay, template_path, opts = {})
+  # @return [String] Powershell command line with payload
+  def self.cmd_psh_payload(pay, payload_arch, template_path, opts = {})
+    if opts[:encode_inner_payload] && opts[:encode_final_payload]
+      fail RuntimeError, ':encode_inner_payload and :encode_final_payload are incompatible options'
+    end
+
+    if opts[:no_equals] && !opts[:encode_final_payload]
+      fail RuntimeError, ':no_equals requires :encode_final_payload option to be used'
+    end
+
     psh_payload = case opts[:method]
       when 'net'
         Rex::Powershell::Payload.to_win32pe_psh_net(template_path, pay)
@@ -297,52 +318,9 @@ EOS
       end
     end
 
-    return psh_payload
-  end
-
-  #
-  # Creates a powershell command line string which will execute the
-  # payload in a hidden window in the appropriate execution environment
-  # for the payload architecture. Opts are passed through to
-  # run_hidden_psh, generate_psh_command_line, generate_psh_payload and
-  # generate_psh_args
-  #
-  # @param pay [String] The payload shellcode
-  # @param template_path [String] The template path
-  # @param payload_arch [String] The payload architecture 'x86'/'x86_64'
-  # @param opts [Hash] The options to generate the command
-  # @option opts [Boolean] :persist Loop the payload to cause
-  #   re-execution if the shellcode finishes
-  # @option opts [Integer] :prepend_sleep Sleep for the specified time
-  #   before executing the payload
-  # @option opts [String] :method The powershell injection technique to
-  #   use: 'net'/'reflection'/'old'
-  # @option opts [Boolean] :encode_inner_payload Encodes the powershell
-  #   script within the hidden/architecture detection wrapper
-  # @option opts [Boolean] :encode_final_payload Encodes the final
-  #   powershell script
-  # @option opts [Boolean] :remove_comspec Removes the %COMSPEC%
-  #   environment variable at the start of the command line
-  # @option opts [Boolean] :wrap_double_quotes Wraps the -Command
-  #   argument in double quotes unless :encode_final_payload
-  # @option opts [TrueClass,FalseClass] :exec_in_place Removes the
-  #   executable wrappers from the powershell code returning raw PSH
-  #   for executing with an existing PSH context
-  # @option opts [TrueClass,FalseClass] :exec_no_wrap Execute PSH
-  # directly using Invoke-Expression to allow larger payloads such as
-  # stageless meterpreter; create no new hidden window
-  #
-  # @return [String] Powershell command line with payload
-  def self.cmd_psh_payload(pay, payload_arch, template_path, opts = {})
-    if opts[:encode_inner_payload] && opts[:encode_final_payload]
-      fail RuntimeError, ':encode_inner_payload and :encode_final_payload are incompatible options'
+    if opts[:prepend_protections_bypass]
+      psh_payload = Rex::Powershell::PshMethods.bypass_powershell_protections << ";#{psh_payload}"
     end
-
-    if opts[:no_equals] && !opts[:encode_final_payload]
-      fail RuntimeError, ':no_equals requires :encode_final_payload option to be used'
-    end
-
-    psh_payload = generate_psh_payload(pay, template_path, opts)
 
     compressed_payload = compress_script(psh_payload, nil, opts)
     encoded_payload = encode_script(psh_payload, opts)
@@ -372,7 +350,7 @@ EOS
     else
       # Wrap in hidden runtime / architecture detection
       inner_args = opts.clone
-      inner_args[:use_single_quotes] = true
+      inner_args[:wrap_double_quotes] = true
       final_payload = run_hidden_psh(smallest_payload, payload_arch, encoded, inner_args)
     end
 
