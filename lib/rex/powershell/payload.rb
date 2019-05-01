@@ -108,7 +108,7 @@ module Payload
   end
 
   #
-  # PSH script that executes an RC4 encrypted payload with Invoke-Expression and disables AMSI beforehand.
+  # PSH script that executes an RC4 encrypted payload with Invoke-Expression
   # by Adrian Vollmer (SySS GmbH, https://www.syss.de)
   #
   def self.to_win32pe_psh_rc4(template_path = TEMPLATE_DIR, code)
