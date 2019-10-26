@@ -298,8 +298,6 @@ EOS
         Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
       when 'msil'
         Rex::Powershell::Payload.to_win32pe_psh_msil(template_path, pay)
-      when 'rc4'
-        Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path,pay)
       else
         fail RuntimeError, 'No Powershell method specified'
     end
@@ -373,20 +371,20 @@ EOS
       command_args[:command] = final_payload
     end
 
-    if opts[:exec_no_wrap]
+    if opts[:exec_rc4]
       psh_command = Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, psh_payload)
     else
       psh_command =  generate_psh_command_line(command_args)
     end
 
 
-    if opts[:remove_comspec] or opts[:exec_in_place] or opts[:exec_no_wrap]
+    if opts[:remove_comspec] or opts[:exec_in_place] or opts[:exec_rc4]
       command = psh_command
     else
       command = "%COMSPEC% /b /c start /b /min #{psh_command}"
     end
 
-    if command.length > 8191 && !opts[:exec_no_wrap]
+    if command.length > 8191 && !opts[:exec_rc4]
       fail RuntimeError, 'Powershell command length is greater than the command line maximum (8192 characters)'
     end
 

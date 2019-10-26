@@ -116,7 +116,6 @@ module Payload
     rig.init_var(:func_rc4_decrypt)
     rig.init_var(:var_rc4buffer)
     rig.init_var(:var_key)
-    rig.init_var(:random_string)
 
     key = Rex::Text.rand_text_alpha(rand(8)+8)
     rc4 = RC4.new(key)
