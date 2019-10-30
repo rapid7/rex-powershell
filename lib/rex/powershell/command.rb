@@ -317,6 +317,15 @@ EOS
     end
 
     compressed_payload = compress_script(psh_payload, nil, opts)
+
+    if opts[:prepend_protections_bypass]
+      bypass_amsi = Rex::Powershell::PshMethods.bypass_powershell_protections
+      if opts[:exec_in_place]
+        bypass_amsi.gsub!('$', '`$')
+      end
+      compressed_payload = bypass_amsi + ";" + compressed_payload
+    end
+
     encoded_payload = encode_script(psh_payload, opts)
 
     # This branch is probably never taken...
@@ -337,10 +346,6 @@ EOS
         smallest_payload = compressed_payload
         encoded = false
       end
-    end
-
-    if opts[:prepend_protections_bypass]
-      smallest_payload = compress_script(Rex::Powershell::PshMethods.bypass_powershell_protections) << ";#{smallest_payload}"
     end
 
     if opts[:exec_in_place]
