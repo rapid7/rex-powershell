@@ -320,9 +320,6 @@ EOS
 
     if opts[:prepend_protections_bypass]
       bypass_amsi = Rex::Powershell::PshMethods.bypass_powershell_protections
-      if opts[:exec_in_place]
-        bypass_amsi.gsub!('$', '`$')
-      end
       compressed_payload = bypass_amsi + ";" + compressed_payload
     end
 
@@ -377,7 +374,9 @@ EOS
     end
     psh_command =  generate_psh_command_line(command_args)
 
-    if opts[:remove_comspec] or opts[:exec_in_place]
+    if opts[:exec_in_place]
+      command = final_payload
+    elsif opts[:remove_comspec]
       command = psh_command
     else
       command = "%COMSPEC% /b /c start /b /min #{psh_command}"
