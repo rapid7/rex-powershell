@@ -28,7 +28,7 @@ module Payload
     rig.init_var(:var_opf)
 
     hash_sub = rig.to_h
-    hash_sub[:b64shellcode] = Rex::Text.encode_base64(code)
+    hash_sub[:b64shellcode] = Rex::Text.encode_base64(Rex::Text.gzip(code))
 
     read_replace_script_template(template_path, "to_mem_dotnet.ps1.template", hash_sub).gsub(/(?<!\r)\n/, "\r\n")
   end
@@ -70,7 +70,7 @@ module Payload
     rig.init_var(:var_opf)
 
     hash_sub = rig.to_h
-    hash_sub[:b64shellcode] = Rex::Text.encode_base64(code)
+    hash_sub[:b64shellcode] = Rex::Text.encode_base64(Rex::Text.gzip(code))
 
     read_replace_script_template(template_path, "to_mem_pshreflection.ps1.template",hash_sub).gsub(/(?<!\r)\n/, "\r\n")
   end
