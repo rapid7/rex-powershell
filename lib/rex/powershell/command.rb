@@ -374,7 +374,7 @@ EOS
     end
     psh_command =  generate_psh_command_line(command_args)
 
-    if opts[:exec_in_place]
+    if opts[:exec_in_place] and (not opts[:encode_final_payload] and not opts[:encode_inner_payload])
       command = final_payload
     elsif opts[:remove_comspec]
       command = psh_command
