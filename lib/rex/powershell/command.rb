@@ -316,11 +316,13 @@ EOS
       end
     end
 
+    compressed_payload = compress_script(psh_payload, nil, opts)
+
     if opts[:prepend_protections_bypass]
-      psh_payload = Rex::Powershell::PshMethods.bypass_powershell_protections << ";#{psh_payload}"
+      bypass_amsi = Rex::Powershell::PshMethods.bypass_powershell_protections
+      compressed_payload = bypass_amsi + ";" + compressed_payload
     end
 
-    compressed_payload = compress_script(psh_payload, nil, opts)
     encoded_payload = encode_script(psh_payload, opts)
 
     # This branch is probably never taken...
@@ -372,7 +374,9 @@ EOS
     end
     psh_command =  generate_psh_command_line(command_args)
 
-    if opts[:remove_comspec] or opts[:exec_in_place]
+    if opts[:exec_in_place] and (not opts[:encode_final_payload] and not opts[:encode_inner_payload])
+      command = final_payload
+    elsif opts[:remove_comspec]
       command = psh_command
     else
       command = "%COMSPEC% /b /c start /b /min #{psh_command}"

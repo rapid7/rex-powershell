@@ -46,7 +46,7 @@ RSpec.describe Rex::Powershell::PshMethods do
       script = Rex::Powershell::PshMethods.proxy_aware_download_and_exec_string(url)
       expect(script).to be
       expect(script.include?(url)).to be_truthy
-      expect(script.downcase.include?('downloadstring')).to be_truthy
+      expect(script.downcase.include?('downloadstring') || script.downcase.include?('downloaddata')).to be_truthy
     end
   end
 end
