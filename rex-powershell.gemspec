@@ -26,4 +26,5 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency 'rex-text'
   spec.add_runtime_dependency 'rex-random_identifier'
+  spec.add_runtime_dependency 'ruby-rc4'
 end

