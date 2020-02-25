@@ -298,6 +298,8 @@ EOS
         Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
       when 'msil'
         Rex::Powershell::Payload.to_win32pe_psh_msil(template_path, pay)
+      when 'rc4'
+        Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, pay)
       else
         fail RuntimeError, 'No Powershell method specified'
     end
