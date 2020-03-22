@@ -157,6 +157,8 @@ module Command
           arg_string << '-NoProfile ' if value
         when :windowstyle
           arg_string << "-WindowStyle #{value} " if value
+        when :usev2
+          arg_string.prepend(" -Version 2") if value
       end
     end
 
@@ -188,6 +190,7 @@ module Command
       arg_string.gsub!('-OutputFormat ', '-o ')
       arg_string.gsub!('-Sta ', '-s ')
       arg_string.gsub!('-WindowStyle ', '-w ')
+      arg_string.gsub!(' -Version ', ' -v ')
     end
 
     # Strip off first space character
