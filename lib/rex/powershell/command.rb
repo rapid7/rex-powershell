@@ -123,6 +123,8 @@ module Command
   #   powershell profile (-NoProfile)
   # @option opts [String] :windowstyle The window style to use
   #   (-WindowStyle)
+  # @option opts [String] :version The version of Powershell to run
+  #   (-version)
   #
   # @return [String] Powershell command arguments
   def self.generate_psh_args(opts)
@@ -157,6 +159,8 @@ module Command
           arg_string << '-NoProfile ' if value
         when :windowstyle
           arg_string << "-WindowStyle #{value} " if value
+        when :version
+          arg_string << "-Version #{value} " if value
       end
     end
 
@@ -188,6 +192,7 @@ module Command
       arg_string.gsub!('-OutputFormat ', '-o ')
       arg_string.gsub!('-Sta ', '-s ')
       arg_string.gsub!('-WindowStyle ', '-w ')
+      arg_string.gsub!('-Version ', '-v ')
     end
 
     # Strip off first space character

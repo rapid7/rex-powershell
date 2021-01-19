@@ -361,6 +361,7 @@ RSpec.describe Rex::Powershell::Command do
                     [:sta, true],
                     [:noprofile, true],
                     [:windowstyle, "hidden"],
+                    [:version, "2.0"],
                     [:command, "Z"],
                     [:wrap_double_quotes, true]
     ]
