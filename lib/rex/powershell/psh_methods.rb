@@ -90,10 +90,15 @@ module Powershell
     # @return [String] PowerShell code to bypass AMSI
     def self.bypass_amsi()
       template_pathname = File.join(Rex::Powershell::Templates::TEMPLATE_DIR, 'amsi_bypass_1.ps1.template')
-      script = Rex::Powershell::Script.new(File.read(template_pathname))
+      template = File.read(template_pathname)
+      rig = Rex::RandomIdentifier::Generator.new(Rex::Powershell::Templates::DEFAULT_RIG_OPTS)
+      template.scan(/%{((cls|func|mth|var)_\w+)/).map{|m| m[0].to_sym }.uniq.sort.each do |var|
+        rig.init_var(var)
+      end
+      script = Rex::Powershell::Script.new(template)
       script.strip_comments
       script.strip_whitespace
-      script.code
+      script.code % rig.to_h
     end
 
     #
