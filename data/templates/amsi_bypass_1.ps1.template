@@ -31,7 +31,7 @@ Class %{cls_Hunter} {
         }
         Else {
             $%{var_address_cursor} = $%{var_address}.ToInt32();
-            $%{var_address_end} = [BitConverter]::ToInt32($%{var_meminfo}, 0) + [BitConverter]::ToInt32($%{var_meminfo}, 16);
+            $%{var_address_end} = [BitConverter]::ToInt32($%{var_meminfo}, 0) + [BitConverter]::ToInt32($%{var_meminfo}, 12);
         }
 
         while ($%{var_address_cursor} -lt $%{var_address_end}) {

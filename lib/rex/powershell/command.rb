@@ -325,6 +325,7 @@ EOS
 
     if opts[:prepend_protections_bypass]
       bypass_amsi = Rex::Powershell::PshMethods.bypass_powershell_protections
+      bypass_amsi = compress_script(bypass_amsi, nil, opts)
       compressed_payload = bypass_amsi + ";" + compressed_payload
     end
 
