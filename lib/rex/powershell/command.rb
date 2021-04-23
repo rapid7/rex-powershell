@@ -306,7 +306,9 @@ EOS
       else
         fail RuntimeError, 'No Powershell method specified'
     end
-
+    if opts[:exec_rc4]
+      psh_payload = Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, psh_payload)
+    end
     # Run our payload in a while loop
     if opts[:persist]
       fun_name = Rex::Text.rand_text_alpha(rand(2) + 2)
