@@ -25,7 +25,7 @@ module Powershell
     def self.scate_string_literal(string, threshold: 0.15)
       # this hasn't been thoroughly tested for strings that contain alot of punctuation, just simple ones like
       # 'AmsiUtils'
-      raise ArgumentError.new('string may only contain a-z,A-Z0-9,.') if string =~ /[^a-zA-Z0-9\.,]/
+      raise ArgumentError.new('string contains an unsupported character') if string =~ /[^a-zA-Z0-9,+=\.\/]/
       raise ArgumentError.new('threshold must be between 0 and 1') unless threshold.between?(0, 1)
 
       new = original = string
