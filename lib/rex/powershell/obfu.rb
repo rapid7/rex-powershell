@@ -12,6 +12,43 @@ module Powershell
     WHITESPACE_REGEX = Regexp.new(/\s+/)
     EMPTY_LINE_REGEX = Regexp.new(/^$|^\s+$/)
 
+    def self.scate_string_literal(string, threshold: 0.15)
+      # this hasn't been thoroughly tested for strings that contain alot of punctuation, just simple ones like
+      # 'AmsiUtils'
+      raise ArgumentError.new('string may only contain a-z,A-Z0-9,.') if string =~ /[^a-zA-Z0-9\.,]/
+      raise ArgumentError.new('threshold must be between 0 and 1') unless threshold.between?(0, 1)
+
+      new = original = string
+      occurrences = {}
+      original.each_char { |char|
+        occurrences[char] = 0 unless occurrences.key?(char)
+        occurrences[char] += 1
+      }
+      char_map = occurrences.group_by { |k,v| v }.sort_by { |k,v| -k }.map { |k,v| v.shuffle }.flatten(1)
+
+      # phase 1
+      format = []
+      char_subs = 0.0
+      while (char_subs / original.length.to_f) < threshold
+        sub_char, count = char_map.pop
+        new = new.gsub(sub_char, "{#{char_subs.to_i}}")
+        format << "'#{sub_char}'"
+        char_subs += count
+      end
+
+      # phase 2
+      concat = "'+'"
+      positions = (0..new.length).to_a.shuffle[0..(new.length * threshold)].sort
+      positions.each_with_index do |position, index|
+        new = new.insert(position + (index * concat.length), concat)
+      end
+      new = "('#{new}')"
+
+      final = new
+      final << "-f#{format.join(',')}" unless format.empty?
+      "(#{final})"
+    end
+
     #
     # Remove comments
     #
@@ -45,6 +82,7 @@ module Powershell
     # @return [String] code with whitespace stripped
     def strip_whitespace
       code.gsub!(WHITESPACE_REGEX, ' ')
+      code.strip!
 
       code
     end

