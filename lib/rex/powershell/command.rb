@@ -268,6 +268,8 @@ EOS
   # @param opts [Hash] The options to generate the command
   # @option opts [Boolean] :persist Loop the payload to cause
   #   re-execution if the shellcode finishes
+  # @option opts [Boolean] :prepend_protections_bypass Prepend a stub that
+  #   bypasses Powershell protections.
   # @option opts [Integer] :prepend_sleep Sleep for the specified time
   #   before executing the payload
   # @option opts [String] :method The powershell injection technique to
@@ -306,9 +308,15 @@ EOS
       else
         fail RuntimeError, 'No Powershell method specified'
     end
+
     if opts[:exec_rc4]
       psh_payload = Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, psh_payload)
     end
+
+    if opts[:prepend]
+      psh_payload = opts[:prepend] << (opts[:prepend].end_with?(';') ? '' : ';') << psh_payload
+    end
+
     # Run our payload in a while loop
     if opts[:persist]
       fun_name = Rex::Text.rand_text_alpha(rand(2) + 2)
