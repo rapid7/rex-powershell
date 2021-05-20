@@ -40,10 +40,10 @@ module Powershell
       format = []
       char_subs = 0.0
       while (char_subs / original.length.to_f) < threshold
-        sub_char, count = char_map.pop
-        new = new.gsub(sub_char, "{#{char_subs.to_i}}")
-        format << "'#{sub_char}'"
-        char_subs += count
+        orig_char, occurrenc_count = char_map.pop
+        new = new.gsub(orig_char, "{#{format.length}}")
+        format << "'#{orig_char}'"
+        char_subs += occurrenc_count
       end
 
       # phase 2
