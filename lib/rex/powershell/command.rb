@@ -268,6 +268,8 @@ EOS
   # @param opts [Hash] The options to generate the command
   # @option opts [Boolean] :persist Loop the payload to cause
   #   re-execution if the shellcode finishes
+  # @option opts [String] :prepend A stub of Powershell code to prepend to the
+  #   inner payload.
   # @option opts [Boolean] :prepend_protections_bypass Prepend a stub that
   #   bypasses Powershell protections.
   # @option opts [Integer] :prepend_sleep Sleep for the specified time
@@ -370,8 +372,8 @@ EOS
     end
 
     command_args = {
-        noprofile: true,
-        windowstyle: 'hidden'
+      noprofile: true,
+      windowstyle: 'hidden'
     }.merge(opts)
 
     if opts[:encode_final_payload]
