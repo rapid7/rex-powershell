@@ -269,7 +269,9 @@ EOS
   # @option opts [Boolean] :persist Loop the payload to cause
   #   re-execution if the shellcode finishes
   # @option opts [String] :prepend A stub of Powershell code to prepend to the
-  #   inner payload.
+  #   payload.
+  # @option opts [String] :prepend_inner A stub of Powershell code to prepend to
+  #  the inner payload.
   # @option opts [Boolean] :prepend_protections_bypass Prepend a stub that
   #   bypasses Powershell protections.
   # @option opts [Integer] :prepend_sleep Sleep for the specified time
@@ -315,8 +317,8 @@ EOS
       psh_payload = Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, psh_payload)
     end
 
-    if opts[:prepend]
-      psh_payload = opts[:prepend] << (opts[:prepend].end_with?(';') ? '' : ';') << psh_payload
+    if opts[:prepend_inner]
+      psh_payload = opts[:prepend_inner] << (opts[:prepend_inner].end_with?(';') ? '' : ';') << psh_payload
     end
 
     # Run our payload in a while loop
@@ -338,6 +340,10 @@ EOS
     if opts[:prepend_protections_bypass]
       bypass_amsi = Rex::Powershell::PshMethods.bypass_powershell_protections
       compressed_payload = bypass_amsi + ";" + compressed_payload
+    end
+
+    if opts[:prepend]
+      psh_payload = opts[:prepend] << (opts[:prepend].end_with?(';') ? '' : ';') << psh_payload
     end
 
     encoded_payload = encode_script(psh_payload, opts)
