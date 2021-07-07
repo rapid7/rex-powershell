@@ -268,6 +268,12 @@ EOS
   # @param opts [Hash] The options to generate the command
   # @option opts [Boolean] :persist Loop the payload to cause
   #   re-execution if the shellcode finishes
+  # @option opts [String] :prepend A stub of Powershell code to prepend to the
+  #   payload.
+  # @option opts [String] :prepend_inner A stub of Powershell code to prepend to
+  #  the inner payload.
+  # @option opts [Boolean] :prepend_protections_bypass Prepend a stub that
+  #   bypasses Powershell protections.
   # @option opts [Integer] :prepend_sleep Sleep for the specified time
   #   before executing the payload
   # @option opts [String] :method The powershell injection technique to
@@ -306,9 +312,15 @@ EOS
       else
         fail RuntimeError, 'No Powershell method specified'
     end
+
     if opts[:exec_rc4]
       psh_payload = Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, psh_payload)
     end
+
+    if opts[:prepend_inner]
+      psh_payload = opts[:prepend_inner] << (opts[:prepend_inner].end_with?(';') ? '' : ';') << psh_payload
+    end
+
     # Run our payload in a while loop
     if opts[:persist]
       fun_name = Rex::Text.rand_text_alpha(rand(2) + 2)
@@ -324,12 +336,6 @@ EOS
     end
 
     compressed_payload = compress_script(psh_payload, nil, opts)
-
-    if opts[:prepend_protections_bypass]
-      bypass_amsi = Rex::Powershell::PshMethods.bypass_powershell_protections
-      compressed_payload = bypass_amsi + ";" + compressed_payload
-    end
-
     encoded_payload = encode_script(psh_payload, opts)
 
     # This branch is probably never taken...
@@ -352,6 +358,15 @@ EOS
       end
     end
 
+    if opts[:prepend_protections_bypass]
+      bypass_amsi = Rex::Powershell::PshMethods.bypass_powershell_protections
+      smallest_payload = bypass_amsi + ";" + smallest_payload
+    end
+
+    if opts[:prepend]
+      smallest_payload = opts[:prepend] << (opts[:prepend].end_with?(';') ? '' : ';') << smallest_payload
+    end
+
     if opts[:exec_in_place]
       final_payload = smallest_payload
     else
@@ -362,8 +377,8 @@ EOS
     end
 
     command_args = {
-        noprofile: true,
-        windowstyle: 'hidden'
+      noprofile: true,
+      windowstyle: 'hidden'
     }.merge(opts)
 
     if opts[:encode_final_payload]

@@ -1,7 +1,7 @@
 function %{func_rc4_decrypt} {
     param([Byte[]]$%{var_rc4buffer})
 
-	$%{var_key} = ([system.Text.Encoding]::UTF8).GetBytes("%{random_key}")
+    $%{var_key} = ([system.Text.Encoding]::UTF8).GetBytes("%{random_key}")
 
     $s = New-Object Byte[] 256;
     $k = New-Object Byte[] 256;

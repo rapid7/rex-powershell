@@ -50,10 +50,11 @@ module Powershell
       # Base64 encode the compressed file contents
       encoded_stream = Rex::Text.encode_base64(compressed_stream)
 
+
       # Build the powershell expression
       # Decode base64 encoded command and create a stream object
       psh_expression =  "$s=New-Object System.IO.MemoryStream(,"
-      psh_expression << "[System.Convert]::FromBase64String('#{encoded_stream}'));"
+      psh_expression << "[System.Convert]::FromBase64String(#{Obfu.scate_string_literal(encoded_stream, threshold: 0.01)}));"
       # Read & delete the first two bytes due to incompatibility with MS
       psh_expression << '$s.ReadByte();'
       psh_expression << '$s.ReadByte();'
@@ -109,7 +110,7 @@ module Powershell
       # GzipStream operates on the Memory Stream
       psh_expression << '(New-Object System.IO.MemoryStream(,'
       # MemoryStream consists of base64 encoded compressed data
-      psh_expression << "[System.Convert]::FromBase64String('#{encoded_stream}')))"
+      psh_expression << "[System.Convert]::FromBase64String(#{Obfu.scate_string_literal(encoded_stream, threshold: 0.01)})))"
       # Set the GzipStream to decompress its MemoryStream contents
       psh_expression << ',[System.IO.Compression.CompressionMode]::Decompress)'
       # Read the decoded, decompressed result into scriptblock contents

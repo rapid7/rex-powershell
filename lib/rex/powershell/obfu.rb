@@ -13,6 +13,57 @@ module Powershell
     EMPTY_LINE_REGEX = Regexp.new(/^$|^\s+$/)
 
     #
+    # Obfuscate a Powershell literal string value. The character set of the string is limited to alpha-numeric
+    # characters and some punctuation. This routine will use a combination of of techniques including formatting and
+    # concatenation. The result is an expression that can either be passed to a function or assigned to a variable.
+    #
+    # @param [String] string The string value to obfuscate.
+    # @param [Float] threshold A floating point value between 0 and 1 that controls how much of the string is
+    #   obfuscated. Higher values result in more obfuscation while 0 returns the original string without any
+    #   obfuscation.
+    # @return [String] An obfuscated Powershell expression that evaluates to the specified string.
+    def self.scate_string_literal(string, threshold: 0.15)
+      # this hasn't been thoroughly tested for strings that contain alot of punctuation, just simple ones like
+      # 'AmsiUtils'
+      raise ArgumentError.new('string contains an unsupported character') if string =~ /[^a-zA-Z0-9,+=\.\/]/
+      raise ArgumentError.new('threshold must be between 0 and 1') unless threshold.between?(0, 1)
+
+      new = original = string
+      occurrences = {}
+      original.each_char { |char|
+        occurrences[char] = 0 unless occurrences.key?(char)
+        occurrences[char] += 1
+      }
+      char_map = occurrences.group_by { |k,v| v }.sort_by { |k,v| -k }.map { |k,v| v.shuffle }.flatten(1)
+
+      # phase 1
+      format = []
+      char_subs = 0.0
+      while (char_subs / original.length.to_f) < threshold
+        orig_char, occurrenc_count = char_map.pop
+        new = new.gsub(orig_char, "{#{format.length}}")
+        format << "'#{orig_char}'"
+        char_subs += occurrenc_count
+      end
+
+      # phase 2
+      concat = "'+'"
+      positions = threshold > 0 ? (0..new.length).to_a.shuffle[0..(new.length * threshold)] : []
+      positions.sort!
+      positions.each_with_index do |position, index|
+        new = new.insert(position + (index * concat.length), concat)
+      end
+
+      new = "'#{new}'"
+      new = "(#{new})" unless threshold == 0
+
+      final = new
+      final << "-f#{format.join(',')}" unless format.empty?
+      final = "(#{final})" unless format.empty? && threshold == 0
+      final
+    end
+
+    #
     # Remove comments
     #
     # @return [String] code without comments
@@ -45,6 +96,7 @@ module Powershell
     # @return [String] code with whitespace stripped
     def strip_whitespace
       code.gsub!(WHITESPACE_REGEX, ' ')
+      code.strip!
 
       code
     end
