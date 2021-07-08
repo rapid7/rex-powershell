@@ -228,5 +228,53 @@ lots \t of   whitespace
       expect(res).to be_falsey
     end
   end
+
+  describe '#descate_string_literals' do
+    let(:string) { 'amsiInitFailed' }
+
+    [0.0, 0.15, 1.0].each do |threshold|
+      it "should deobfuscate obfuscated strings when threshold is #{threshold}" do
+        obfuscated = Rex::Powershell::Obfu.scate_string_literal(string, threshold: threshold)
+        deobfuscated = Rex::Powershell::Obfu.descate_string_literal(obfuscated)
+        expect(deobfuscated).to eq string
+      end
+    end
+
+    it 'should raise a RuntimeError for invalid strings' do
+      expect {
+        Rex::Powershell::Obfu.descate_string_literal('')
+      }.to raise_error(RuntimeError)
+    end
+  end
+
+  describe '#scate_string_literals' do
+    let(:string) { 'amsiInitFailed' }
+    it 'should obfuscate string literals when the threshold is the default value' do
+      obfuscated = Rex::Powershell::Obfu.scate_string_literal(string)
+      expect(obfuscated).to_not eq(string)
+      expect(obfuscated.include?(string)).to be_falsey
+    end
+
+    it 'should obfuscate string literals when threshold is 0.0' do
+      # the obfuscation logic should complete successfully but when threshold == 0, nothing should be randomized
+      obfuscated = Rex::Powershell::Obfu.scate_string_literal(string, threshold: 0)
+      expect(obfuscated).to eq("'#{string}'")
+    end
+
+    it 'should obfuscate string literals when threshold is 1.0' do
+      obfuscated = Rex::Powershell::Obfu.scate_string_literal(string, threshold: 1.0)
+      expect(obfuscated).to_not eq(string)
+      expect(obfuscated.include?(string)).to be_falsey
+    end
+
+    it 'should raise an ArgumentError when the threshold is out of bounds' do
+      expect {
+        Rex::Powershell::Obfu.scate_string_literal(string, threshold: -1)
+      }.to raise_error(ArgumentError)
+      expect {
+        Rex::Powershell::Obfu.scate_string_literal(string, threshold: 2)
+      }.to raise_error(ArgumentError)
+    end
+  end
 end
 

@@ -66,13 +66,14 @@ module Powershell
     #
     # Deobfuscate a Powershell literal string value that was previously obfuscated by #scate_string_literal.
     #
-    # @param [String] string The string value to obfuscate.
+    # @param [String] string The obfuscated Powershell expression to deobfuscate.
     # @raises [RuntimeError] If the string can not be deobfuscated, for example because it was randomized using a
     #   different routine, then an exception is raised.
     # @return [String] The string literal value.
     def self.descate_string_literal(string)
+      string = string.strip
       nest_level = [string.match(/^(\(*)/)[0].length, string.match(/(\)*)$/)[0].length].min
-      string = string[nest_level...-nest_level].strip
+      string = string[nest_level...-nest_level].strip if nest_level > 0
       format_args = nil
       if (string =~ /\((?>[^)(]+|\g<0>)*\)/) == 0
         format = Regexp.last_match(0)
