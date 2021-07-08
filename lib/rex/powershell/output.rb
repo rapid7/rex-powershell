@@ -140,8 +140,15 @@ module Powershell
     #
     # @return [String] Decompressed powershell code
     def decompress_code
-      # Extract substring with payload
-      encoded_stream = @code.scan(/FromBase64String\('(.*)'/).flatten.first
+      # Extract substring with payload4
+      if @code =~ /FromBase64String\('([a-zA-z0-9\+\/=]*)'\)/
+        encoded_stream = Regexp.last_match(1)
+      elsif @code =~ /FromBase64String(\((?>[^)(]+|\g<1>)*\))/
+        encoded_stream = Obfu.descate_string_literal(Regexp.last_match(1))
+      else
+        raise RuntimeError, 'Failed to identify the base64 data'
+      end
+
       # Decode and decompress the string
       unencoded = Rex::Text.decode_base64(encoded_stream)
       begin
