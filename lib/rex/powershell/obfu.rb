@@ -63,6 +63,13 @@ module Powershell
       final
     end
 
+    #
+    # Deobfuscate a Powershell literal string value that was previously obfuscated by #scate_string_literal.
+    #
+    # @param [String] string The string value to obfuscate.
+    # @raises [RuntimeError] If the string can not be deobfuscated, for example because it was randomized using a
+    #   different routine, then an exception is raised.
+    # @return [String] The string literal value.
     def self.descate_string_literal(string)
       nest_level = [string.match(/^(\(*)/)[0].length, string.match(/(\)*)$/)[0].length].min
       string = string[nest_level...-nest_level].strip
@@ -71,20 +78,20 @@ module Powershell
         format = Regexp.last_match(0)
         format_args = string[format.length..-1].strip
         unless format_args =~ /-f\s*('.',\s*)*('.')/
-          raise ArgumentError.new('The obfuscated string structure is unsupported')
+          raise RuntimeError.new('The obfuscated string structure is unsupported')
         end
         format_args = format_args[2..-1].strip.scan(/'(.)'/).map { |match| match[0] }
         string = format[1...-1].strip
       end
 
       unless string =~ /^'.*'$/
-        raise ArgumentError.new('The obfuscates string structure is unsupported')
+        raise RuntimeError.new('The obfuscated string structure is unsupported')
       end
       string = string.gsub(/'\s*\+\s*'/, '') # process all concatenation operations
-      unless format_args.nil?
+      unless format_args.nil? # process all format string operations
         string = string.gsub(/\{\s*\d+\s*\}/) do |index|
           format_args[index[1...-1].to_i]
-        end # process all format string operations
+        end
       end
 
       string[1...-1]
