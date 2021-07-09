@@ -24,7 +24,7 @@ module Powershell
     # @return [String] An obfuscated Powershell expression that evaluates to the specified string.
     def self.scate_string_literal(string, threshold: 0.15)
       # this hasn't been thoroughly tested for strings that contain alot of punctuation, just simple ones like
-      # 'AmsiUtils'
+      # 'AmsiUtils', the most important characters that are assumed to be missing are quotes and braces
       raise ArgumentError.new('string contains an unsupported character') if string =~ /[^a-zA-Z0-9,+=\.\/]/
       raise ArgumentError.new('threshold must be between 0 and 1') unless threshold.between?(0, 1)
 
@@ -40,10 +40,10 @@ module Powershell
       format = []
       char_subs = 0.0
       while (char_subs / original.length.to_f) < threshold
-        orig_char, occurrenc_count = char_map.pop
-        new = new.gsub(orig_char, "{#{format.length}}")
+        orig_char, occurrence_count = char_map.pop
+        new = new.gsub(/(?<!\{)#{Regexp.escape(orig_char)}(?!\})/, "{#{format.length}}")
         format << "'#{orig_char}'"
-        char_subs += occurrenc_count
+        char_subs += occurrence_count
       end
 
       # phase 2
@@ -61,6 +61,41 @@ module Powershell
       final << "-f#{format.join(',')}" unless format.empty?
       final = "(#{final})" unless format.empty? && threshold == 0
       final
+    end
+
+    #
+    # Deobfuscate a Powershell literal string value that was previously obfuscated by #scate_string_literal.
+    #
+    # @param [String] string The obfuscated Powershell expression to deobfuscate.
+    # @raises [RuntimeError] If the string can not be deobfuscated, for example because it was randomized using a
+    #   different routine, then an exception is raised.
+    # @return [String] The string literal value.
+    def self.descate_string_literal(string)
+      string = string.strip
+      nest_level = [string.match(/^(\(*)/)[0].length, string.match(/(\)*)$/)[0].length].min
+      string = string[nest_level...-nest_level].strip if nest_level > 0
+      format_args = nil
+      if (string =~ /\((?>[^)(]+|\g<0>)*\)/) == 0
+        format = Regexp.last_match(0)
+        format_args = string[format.length..-1].strip
+        unless format_args =~ /-f\s*('.',\s*)*('.')/
+          raise RuntimeError.new('The obfuscated string structure is unsupported')
+        end
+        format_args = format_args[2..-1].strip.scan(/'(.)'/).map { |match| match[0] }
+        string = format[1...-1].strip
+      end
+
+      unless string =~ /^'.*'$/
+        raise RuntimeError.new('The obfuscated string structure is unsupported')
+      end
+      string = string.gsub(/'\s*\+\s*'/, '') # process all concatenation operations
+      unless format_args.nil? # process all format string operations
+        string = string.gsub(/\{\s*\d+\s*\}/) do |index|
+          format_args[index[1...-1].to_i]
+        end
+      end
+
+      string[1...-1]
     end
 
     #

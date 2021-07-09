@@ -36,11 +36,9 @@ RSpec.describe Rex::Powershell::Output do
   end
 
   describe "::deflate_code" do
-    it 'should zlib the code and wrap in powershell in uncompression stub' do
+    it 'should zlib the code and wrap in powershell in decompression stub' do
       compressed = subject.deflate_code
       expect(compressed.include?('IO.Compression.DeflateStream')).to be_truthy
-      compressed =~ /FromBase64String\('([A-Za-z0-9\/+=]+)'\)/
-      expect($1.size).to be < Rex::Text.encode_base64(example_script).size
       expect(compressed).to eq subject.code
     end
 
@@ -63,8 +61,6 @@ RSpec.describe Rex::Powershell::Output do
     it 'should gzip the code and wrap in powershell in uncompression stub' do
       compressed = subject.gzip_code
       expect(compressed.include?('IO.Compression.GzipStream')).to be_truthy
-      compressed =~ /FromBase64String\('([A-Za-z0-9\/+=]+)'\)/
-      expect($1.size).to be < Rex::Text.encode_base64(example_script).size
       expect(compressed).to eq subject.code
     end
 

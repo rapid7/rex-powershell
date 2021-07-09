@@ -3,6 +3,10 @@ require 'spec_helper'
 
 
 def decompress(code)
+  if code =~ /powershell.exe.*(?:-c|-Command)\s(.*)$/
+    code = Regexp.last_match(1).gsub("''", "'")
+  end
+
   Rex::Powershell::Script.new(code).decompress_code
 end
 
