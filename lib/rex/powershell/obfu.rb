@@ -24,7 +24,7 @@ module Powershell
     # @return [String] An obfuscated Powershell expression that evaluates to the specified string.
     def self.scate_string_literal(string, threshold: 0.15)
       # this hasn't been thoroughly tested for strings that contain alot of punctuation, just simple ones like
-      # 'AmsiUtils'
+      # 'AmsiUtils', the most important characters that are assumed to be missing are quotes and braces
       raise ArgumentError.new('string contains an unsupported character') if string =~ /[^a-zA-Z0-9,+=\.\/]/
       raise ArgumentError.new('threshold must be between 0 and 1') unless threshold.between?(0, 1)
 
@@ -40,10 +40,10 @@ module Powershell
       format = []
       char_subs = 0.0
       while (char_subs / original.length.to_f) < threshold
-        orig_char, occurrenc_count = char_map.pop
-        new = new.gsub(orig_char, "{#{format.length}}")
+        orig_char, occurrence_count = char_map.pop
+        new = new.gsub(/(?<!\{)#{Regexp.escape(orig_char)}(?!\})/, "{#{format.length}}")
         format << "'#{orig_char}'"
-        char_subs += occurrenc_count
+        char_subs += occurrence_count
       end
 
       # phase 2
