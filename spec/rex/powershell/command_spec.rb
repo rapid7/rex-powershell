@@ -59,6 +59,7 @@ RSpec.describe Rex::Powershell::Command do
         script = File.read(example_script)
         compressed = subject.compress_script(script, nil, strip_comments: false)
         expect(compressed.length).to be < script.length
+        expect(true).to be false
       end
     end
 
