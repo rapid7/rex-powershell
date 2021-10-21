@@ -146,7 +146,7 @@ module Powershell
       elsif @code =~ /FromBase64String(\((?>[^)(]+|\g<1>)*\))/
         encoded_stream = Obfu.descate_string_literal(Regexp.last_match(1))
       else
-        raise RuntimeError, 'Failed to identify the base64 data'
+        raise Exceptions::PowershellError, 'Failed to identify the base64 data'
       end
 
       # Decode and decompress the string
@@ -157,7 +157,7 @@ module Powershell
         begin
           @code = Rex::Text.zlib_inflate(unencoded)
         rescue Zlib::DataError => e
-          raise RuntimeError, 'Invalid compression'
+          raise Exceptions::PowershellError, 'Invalid compression'
         end
       end
 
