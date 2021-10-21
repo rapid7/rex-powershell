@@ -1,7 +1,6 @@
 # -*- coding:binary -*-
 require 'spec_helper'
 
-
 def decompress(code)
   if code =~ /powershell.exe.*(?:-c|-Command)\s(.*)$/
     code = Regexp.last_match(1).gsub("''", "'")
@@ -163,26 +162,19 @@ RSpec.describe Rex::Powershell::Command do
 
     context 'when payload is huge' do
       it 'should raise an exception' do
-        except = false
-        begin
-          code = subject.cmd_psh_payload(Rex::Text.rand_text_alpha(12000), arch, template_path, method: psh_method)
-        rescue RuntimeError => e
-          except = true
-        end
-
-        expect(except).to be_truthy
+        expect { subject.cmd_psh_payload(Rex::Text.rand_text_alpha(12000), arch, template_path, method: psh_method) }.to raise_error(Rex::Powershell::Exceptions::PowershellCommandLengthError)
       end
     end
 
     context 'when persist is true' do
-      it 'should add a persistance loop' do
+      it 'should add a persistence loop' do
         code = subject.cmd_psh_payload(payload, arch, template_path, persist: true, method: psh_method)
         expect(decompress(code).include?('while(1){Start-Sleep -s ')).to be_truthy
       end
     end
 
     context 'when persist is false' do
-      it 'shouldnt add a persistance loop' do
+      it 'should not add a persistence loop' do
         code = subject.cmd_psh_payload(payload, arch, template_path, persist: false, method: psh_method)
         expect(decompress(code).include?('while(1){Start-Sleep -s ')).to be_falsey
       end
