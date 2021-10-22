@@ -293,11 +293,11 @@ EOS
   # @return [String] Powershell command line with payload
   def self.cmd_psh_payload(pay, payload_arch, template_path, opts = {})
     if opts[:encode_inner_payload] && opts[:encode_final_payload]
-      fail RuntimeError, ':encode_inner_payload and :encode_final_payload are incompatible options'
+      fail Exceptions::PowershellError, ':encode_inner_payload and :encode_final_payload are incompatible options'
     end
 
     if opts[:no_equals] && !opts[:encode_final_payload]
-      fail RuntimeError, ':no_equals requires :encode_final_payload option to be used'
+      fail Exceptions::PowershellError, ':no_equals requires :encode_final_payload option to be used'
     end
 
     psh_payload = case opts[:method]
@@ -310,7 +310,7 @@ EOS
       when 'msil'
         Rex::Powershell::Payload.to_win32pe_psh_msil(template_path, pay)
       else
-        fail RuntimeError, 'No Powershell method specified'
+        fail Exceptions::PowershellError, 'No Powershell method specified'
     end
 
     if opts[:exec_rc4]
@@ -405,7 +405,7 @@ EOS
     end
 
     if command.length > 8191
-      fail RuntimeError, 'Powershell command length is greater than the command line maximum (8192 characters)'
+      fail Exceptions::PowershellCommandLengthError, 'Powershell command length is greater than the command line maximum (8192 characters)'
     end
 
     command

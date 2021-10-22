@@ -67,7 +67,7 @@ module Powershell
     # Deobfuscate a Powershell literal string value that was previously obfuscated by #scate_string_literal.
     #
     # @param [String] string The obfuscated Powershell expression to deobfuscate.
-    # @raises [RuntimeError] If the string can not be deobfuscated, for example because it was randomized using a
+    # @raises [Exceptions::PowershellError] If the string can not be deobfuscated, for example because it was randomized using a
     #   different routine, then an exception is raised.
     # @return [String] The string literal value.
     def self.descate_string_literal(string)
@@ -79,14 +79,14 @@ module Powershell
         format = Regexp.last_match(0)
         format_args = string[format.length..-1].strip
         unless format_args =~ /-f\s*('.',\s*)*('.')/
-          raise RuntimeError.new('The obfuscated string structure is unsupported')
+          raise Exceptions::PowershellError, 'The obfuscated string structure is unsupported'
         end
         format_args = format_args[2..-1].strip.scan(/'(.)'/).map { |match| match[0] }
         string = format[1...-1].strip
       end
 
       unless string =~ /^'.*'$/
-        raise RuntimeError.new('The obfuscated string structure is unsupported')
+        raise Exceptions::PowershellError, 'The obfuscated string structure is unsupported'
       end
       string = string.gsub(/'\s*\+\s*'/, '') # process all concatenation operations
       unless format_args.nil? # process all format string operations
