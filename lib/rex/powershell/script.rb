@@ -48,7 +48,7 @@ module Powershell
 
         # Close open file
         fd.close
-      rescue Errno::ENAMETOOLONG, Errno::ENOENT
+      rescue Errno::ENAMETOOLONG, Errno::ENOENT, Errno::EINVAL
         # Treat code as a... code
         @code = code.to_s.dup # in case we're eating another script
       end
