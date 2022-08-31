@@ -10,24 +10,29 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 40
 
     strategy:
       fail-fast: true
       matrix:
         ruby:
-          - 2.6
           - 2.7
           - 3.0
           - 3.1
+        os:
+          - ubuntu-20.04
+          - ubuntu-latest
+        exclude:
+          - { os: ubuntu-latest, ruby: 2.7 }
+          - { os: ubuntu-latest, ruby: 3.0 }
         test_cmd:
           - bundle exec rspec
 
     env:
       RAILS_ENV: test
 
-    name: Ruby ${{ matrix.ruby }} - ${{ matrix.test_cmd }}
+    name: ${{ matrix.os }} - Ruby ${{ matrix.ruby }} - ${{ matrix.test_cmd }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
