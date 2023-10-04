@@ -1,0 +1,15 @@
+---
+info:
+  title: Rex Powershell
+  description: Rex library for dealing with Powershell Scripts
+  x-cortex-git:
+    github:
+      alias: r7org
+      repository: rapid7/rex-powershell
+  x-cortex-tag: rex-powershell
+  x-cortex-type: service
+  x-cortex-domain-parents:
+  - tag: metasploit
+openapi: 3.0.1
+servers:
+- url: "/"
