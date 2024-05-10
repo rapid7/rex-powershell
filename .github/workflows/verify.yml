@@ -35,7 +35,7 @@ jobs:
     name: ${{ matrix.os }} - Ruby ${{ matrix.ruby }} - ${{ matrix.test_cmd }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
