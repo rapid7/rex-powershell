@@ -26,4 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'rex-text'
   spec.add_runtime_dependency 'rex-random_identifier'
   spec.add_runtime_dependency 'ruby-rc4'
+
+  # bigdecimal is not part of the default gems starting from Ruby 3.4.0: https://www.ruby-lang.org/en/news/2023/12/25/ruby-3-3-0-released/
+  spec.add_runtime_dependency 'bigdecimal'
 end

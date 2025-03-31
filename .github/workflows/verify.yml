@@ -9,43 +9,5 @@ on:
       - '*'
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 40
-
-    strategy:
-      fail-fast: true
-      matrix:
-        ruby:
-          - 2.7
-          - 3.0
-          - 3.1
-        os:
-          - ubuntu-20.04
-          - ubuntu-latest
-        exclude:
-          - { os: ubuntu-latest, ruby: 2.7 }
-          - { os: ubuntu-latest, ruby: 3.0 }
-        test_cmd:
-          - bundle exec rspec
-
-    env:
-      RAILS_ENV: test
-
-    name: ${{ matrix.os }} - Ruby ${{ matrix.ruby }} - ${{ matrix.test_cmd }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
-
-      - name: ${{ matrix.test_cmd }}
-        run: |
-          echo "${CMD}"
-          bash -c "${CMD}"
-        env:
-          CMD: ${{ matrix.test_cmd }}
+  build:
+    uses: rapid7/metasploit-framework/.github/workflows/shared_gem_verify.yml@master
