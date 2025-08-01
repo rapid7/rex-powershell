@@ -14,7 +14,7 @@ module Powershell
     DEFAULT_RIG_OPTS = {
       max_length: 5,
       min_length: 2,
-      forbidden: Parser::RESERVED_VARIABLE_NAMES.map {|e| e[1..-1]}
+      language: :powershell
     }
     # Pretend we are actually a string
     extend ::Forwardable
