@@ -13,13 +13,14 @@ gem 'rex-powershell'
 ```
 
 And then execute:
-
-    $ bundle
+```
+$ bundle
+```
 
 Or install it yourself as:
-
-    $ gem install rex-powershell
-
+```
+$ gem install rex-powershell
+```
 
 ## Development
 
