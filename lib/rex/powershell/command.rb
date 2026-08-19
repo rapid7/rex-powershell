@@ -208,8 +208,14 @@ module Command
   # detect the execution environment and spawn the appropriate
   # powershell executable for the payload architecture.
   #
+  # ARM64 note: [IntPtr]::Size cannot tell an ARM64 process apart from an x64
+  # one, so PROCESSOR_ARCHITECTURE (and PROCESSOR_ARCHITEW6432 for a 32-bit
+  # process on Windows-on-ARM) is consulted first. A payload_arch of
+  # 'aarch64' targets the native ARM64 powershell.exe under System32
+  # (reached via sysnative when the current process is 32-bit).
+  #
   # @param ps_code [String] Powershell code
-  # @param payload_arch [String] The payload architecture 'x86'/'x86_64'
+  # @param payload_arch [String] The payload architecture 'x86'/'x86_64'/'aarch64'
   # @param encoded [Boolean] Indicates whether ps_code is encoded or not
   # @param opts [Hash] The options for generate_psh_args
   #
@@ -240,11 +246,42 @@ $p=[System.Diagnostics.Process]::Start($s)
 EOS
     process_start_info.gsub!("\n", ';')
 
+    # Path helpers keep the emitted PowerShell readable and single-quoted so no
+    # further escaping is required at the target.
+    native_ps      = "$b='powershell.exe'"
+    syswow64_ps    = "$b=$env:windir+'\\syswow64\\WindowsPowerShell\\v1.0\\powershell.exe'"
+    sysnative_ps   = "$b=$env:windir+'\\sysnative\\WindowsPowerShell\\v1.0\\powershell.exe'"
+
+    # On Windows-on-ARM the native host is the ARM64 powershell.exe; the
+    # 32-bit x86 host still lives under SysWOW64. When we're already inside a
+    # 32-bit process on WoA, PROCESSOR_ARCHITECTURE reports 'x86' and
+    # PROCESSOR_ARCHITEW6432 reports 'ARM64', so we escape to native via
+    # sysnative. x86_64 payloads on WoA fall through to native and rely on
+    # the OS x64 emulator, which is best-effort.
+    arm64_native_branch = case payload_arch
+                          when 'aarch64' then native_ps
+                          when 'x86'     then syswow64_ps
+                          else                native_ps
+                          end
+
+    arm64_wow64_branch  = case payload_arch
+                          when 'aarch64' then sysnative_ps
+                          when 'x86'     then native_ps
+                          else                sysnative_ps
+                          end
+
+    intptr4_branch      = payload_arch == 'x86' ? native_ps : sysnative_ps
+    intptr8_branch      = payload_arch == 'x86' ? syswow64_ps : native_ps
+
     archictecure_detection = <<EOS
-if([IntPtr]::Size -eq 4){
-#{payload_arch == 'x86' ? "$b='powershell.exe'" : "$b=$env:windir+'\\sysnative\\WindowsPowerShell\\v1.0\\powershell.exe'"}
+if($env:PROCESSOR_ARCHITECTURE -eq 'ARM64'){
+#{arm64_native_branch}
+}elseif($env:PROCESSOR_ARCHITEW6432 -eq 'ARM64'){
+#{arm64_wow64_branch}
+}elseif([IntPtr]::Size -eq 4){
+#{intptr4_branch}
 }else{
-#{payload_arch == 'x86' ? "$b=$env:windir+'\\syswow64\\WindowsPowerShell\\v1.0\\powershell.exe'" : "$b='powershell.exe'"}
+#{intptr8_branch}
 };
 EOS
 
@@ -264,7 +301,7 @@ EOS
   # run_hidden_psh, generate_psh_command_line and generate_psh_args
   #
   # @param pay [String] The payload shellcode
-  # @param payload_arch [String] The payload architecture 'x86'/'x86_64'
+  # @param payload_arch [String] The payload architecture 'x86'/'x86_64'/'aarch64'
   # @param opts [Hash] The options to generate the command
   # @option opts [Boolean] :persist Loop the payload to cause
   #   re-execution if the shellcode finishes

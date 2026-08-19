@@ -129,6 +129,39 @@ RSpec.describe Rex::Powershell::Command do
       end
     end
 
+    context 'when aarch64 payload' do
+      let(:code) { subject.run_hidden_psh(payload, 'aarch64', encoded) }
+
+      it 'branches on PROCESSOR_ARCHITECTURE (ARM64) instead of [IntPtr]::Size' do
+        expect(code).to include("$env:PROCESSOR_ARCHITECTURE -eq 'ARM64'")
+        expect(code).to include("$env:PROCESSOR_ARCHITEW6432 -eq 'ARM64'")
+      end
+
+      it 'targets the native powershell.exe on a native ARM64 host' do
+        arm64_branch = code[/PROCESSOR_ARCHITECTURE -eq 'ARM64'\)\{([^}]*)\}/, 1]
+        expect(arm64_branch).to include("$b='powershell.exe'")
+      end
+
+      it 'escapes WOW64 filesystem redirection via sysnative when running 32-bit on WoA' do
+        wow64_branch = code[/PROCESSOR_ARCHITEW6432 -eq 'ARM64'\)\{([^}]*)\}/, 1]
+        expect(wow64_branch).to include('sysnative')
+      end
+    end
+
+    context 'when x86 payload on a WoA host' do
+      let(:code) { subject.run_hidden_psh(payload, 'x86', encoded) }
+
+      it 'still routes 32-bit payloads through SysWOW64 on native ARM64 hosts' do
+        arm64_branch = code[/PROCESSOR_ARCHITECTURE -eq 'ARM64'\)\{([^}]*)\}/, 1]
+        expect(arm64_branch).to include('syswow64')
+      end
+
+      it 'keeps the current process when already 32-bit on WoA' do
+        wow64_branch = code[/PROCESSOR_ARCHITEW6432 -eq 'ARM64'\)\{([^}]*)\}/, 1]
+        expect(wow64_branch).to include("$b='powershell.exe'")
+      end
+    end
+
     context 'when encoded' do
       it 'should generate a code including an encoded command' do
         code = subject.run_hidden_psh(payload, arch, true)
