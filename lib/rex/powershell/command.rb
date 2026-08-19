@@ -273,7 +273,7 @@ EOS
     intptr4_branch      = payload_arch == 'x86' ? native_ps : sysnative_ps
     intptr8_branch      = payload_arch == 'x86' ? syswow64_ps : native_ps
 
-    archictecure_detection = <<EOS
+    architecture_detection = <<EOS
 if($env:PROCESSOR_ARCHITECTURE -eq 'ARM64'){
 #{arm64_native_branch}
 }elseif($env:PROCESSOR_ARCHITEW6432 -eq 'ARM64'){
@@ -285,12 +285,12 @@ if($env:PROCESSOR_ARCHITECTURE -eq 'ARM64'){
 };
 EOS
 
-    archictecure_detection.gsub!("\n", '')
+    architecture_detection.gsub!("\n", '')
 
     if opts[:no_arch_detect]
       return   "$b='powershell.exe';#{process_start_info}"
     else
-      archictecure_detection + process_start_info
+      architecture_detection + process_start_info
     end
   end
 
