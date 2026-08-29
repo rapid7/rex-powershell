@@ -314,7 +314,7 @@ EOS
   # @option opts [Integer] :prepend_sleep Sleep for the specified time
   #   before executing the payload
   # @option opts [String] :method The powershell injection technique to
-  #   use: 'net'/'reflection'/'old'
+  #   use: 'net'/'reflection'/'old'/'msil'
   # @option opts [Boolean] :encode_inner_payload Encodes the powershell
   #   script within the hidden/architecture detection wrapper
   # @option opts [Boolean] :encode_final_payload Encodes the final

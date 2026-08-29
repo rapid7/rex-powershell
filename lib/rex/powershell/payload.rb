@@ -95,10 +95,15 @@ module Payload
     rig.init_var(:var_sc_addr)
     rig.init_var(:var_sc)
     rig.init_var(:var_src_meth)
+    rig.init_var(:var_tgt_addr)
+    rig.init_var(:var_flush_type)
+    rig.init_var(:var_flush_method)
     rig.init_var(:str_addr_loc)
     rig.init_var(:str_tgt_meth)
     rig.init_var(:str_src_type)
     rig.init_var(:str_tgt_type)
+    rig.init_var(:str_flush_type)
+    rig.init_var(:str_flush_method)
 
     hash_sub = rig.to_h
     hash_sub[:b64shellcode] = Rex::Text.encode_base64(code)
